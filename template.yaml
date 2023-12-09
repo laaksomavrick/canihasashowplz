@@ -57,6 +57,47 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${AppFunction}
       RetentionInDays: !If [ IsProd, 30, 7 ]
 
+  ShowTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      TableName: !Sub ${AWS::StackName}-ShowsV1
+      AttributeDefinitions:
+        - AttributeName: ShowId
+          AttributeType: S
+        - AttributeName: Title
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ShowId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: TitleGSI
+          KeySchema:
+            - AttributeName: Title
+              KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+              - ShowId
+            ProjectionType: "INCLUDE"
+
+  RatingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      TableName: !Sub ${AWS::StackName}-RatingsV1
+      AttributeDefinitions:
+        - AttributeName: ShowId
+          AttributeType: S
+        - AttributeName: UserId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ShowId
+          KeyType: HASH
+        - AttributeName: UserId
+          KeyType: RANGE
+
 Outputs:
   AppApi:
     Description: "API Gateway endpoint URL for Prod stage for Inference function"
