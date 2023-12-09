@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "canihaveatvshowplz"
+version = "1.0.0"
+description = ""
+authors = []
+readme = "README.md"
+packages = []
+
+[tool.poetry.group.main.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.app.dependencies]
+canihaveatvshowplz-app = { path = "app", develop = true}
+
+[tool.poetry.group.model.dependencies]
+canihaveatvshowplz-model = { path = "model", develop = true}
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
