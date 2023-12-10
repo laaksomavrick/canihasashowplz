@@ -7,6 +7,8 @@ packages = [{include = "canihaveatvshowplz", from = "src"}]
 
 [tool.poetry.scripts]
 normalize-imdb-data = "data.normalize_data_script:start"
+upload-to-dynamo-staging = "data.upload_to_dynamo_staging_script:start"
+upload-to-dynamo-prod = "data.upload_to_dynamo_prod_script:start"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -15,6 +17,7 @@ pillow = "^10.1.0"
 joblib = "^1.3.2"
 numpy = "^1.26.2"
 pandas = "^2.1.4"
+boto3 = "^1.33.11"
 
 [build-system]
 requires = ["poetry-core"]
