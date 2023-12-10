@@ -1,6 +1,9 @@
+import re
 from uuid import uuid4
 from os.path import abspath, dirname, join
 from pandas import read_csv
+
+from model.data.functions import normalize_show_title
 
 
 def start():
@@ -26,6 +29,13 @@ def start():
         df["show_id"] = df["show_id"].map(show_id_mapping)
 
     ratings_df["user_id"] = ratings_df["user_id"].map(user_id_mapping)
+
+    shows_df["normalized_title"] = shows_df["primary_title"].apply(normalize_show_title)
+    ratings_df["is_liked"] = ratings_df["rating"].apply(
+        lambda rating: 1 if rating >= 8 else 0
+    )
+
+    ratings_df = ratings_df.drop_duplicates(subset=["show_id", "user_id"])
 
     shows_df.to_csv(join(project_root, "data/shows.csv"), index=False)
     ratings_df.to_csv(join(project_root, "data/ratings.csv"), index=False)
