@@ -1,5 +1,7 @@
 FROM public.ecr.aws/lambda/python:3.11
 
+COPY model.joblib /opt/ml/model
+
 COPY pyproject.toml poetry.lock ./
 
 ENV POETRY_VIRTUALENVS_CREATE=false

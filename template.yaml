@@ -18,7 +18,7 @@ Globals:
     Architectures:
       - x86_64
     Timeout: 30
-    MemorySize: 256
+    MemorySize: 8192
     AutoPublishAlias: live
     DeploymentPreference:
       Type: AllAtOnce
@@ -35,7 +35,7 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
 
-  AppFunction:
+  PredictionFunction:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
@@ -51,10 +51,10 @@ Resources:
       DockerContext: ./app
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
-  AppFunctionLogGroup:
+  PredictionFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${AppFunction}
+      LogGroupName: !Sub /aws/lambda/${PredictionFunction}
       RetentionInDays: !If [ IsProd, 30, 7 ]
 
   ShowTable:
@@ -102,9 +102,9 @@ Outputs:
   AppApi:
     Description: "API Gateway endpoint URL for Prod stage for Inference function"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/v1/shows/recommend/"
-  AppFunction:
-    Description: "Lambda Function ARN"
-    Value: !GetAtt AppFunction.Arn
-  AppFunctionIamRole:
+  PredictionFunction:
+    Description: "PredictionFunction ARN"
+    Value: !GetAtt PredictionFunction.Arn
+  PredictionFunctionIamRole:
     Description: "Implicit IAM Role created for App function"
-    Value: !GetAtt AppFunctionRole.Arn
+    Value: !GetAtt PredictionFunctionRole.Arn

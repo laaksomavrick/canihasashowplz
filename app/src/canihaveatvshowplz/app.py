@@ -1,28 +1,22 @@
 import joblib
-import base64
-import numpy as np
 import json
 
-from io import BytesIO
-from PIL import Image
-
-# model_file = "/opt/ml/model"
-# model = joblib.load(model_file)
+model_file = "/opt/ml/model"
+model = joblib.load(model_file)
 
 
 def lambda_handler(event, context):
-    # image_bytes = event["body"].encode("utf-8")
-    # image = Image.open(BytesIO(base64.b64decode(image_bytes))).convert(mode="L")
-    # image = image.resize((28, 28))
-    #
-    # x = np.array(image)
-    # prediction = int(model.predict(x.reshape(1, -1))[0])
+    body = event["body"]
+    print(body)
+
+    # The Wire, DS9, The Sopranos
+    prediction = model.predict(["365563,9c7a19bc-6f54-4d21-b6b6-0606e29fbba3", "447316,8c0ebcc3-fbf7-4a67-8c3e-85f13de11f8e"])
 
     return {
         "statusCode": 200,
         "body": json.dumps(
             {
-                "message": "hello, world",
+                "prediction": prediction,
             }
         ),
     }
