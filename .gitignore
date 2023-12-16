@@ -244,4 +244,4 @@ $RECYCLE.BIN/
 
 .aws-sam
 
-app/model.joblib
+lambdas/prediction-worker/model.joblib

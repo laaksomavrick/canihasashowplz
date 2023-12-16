@@ -13,6 +13,6 @@ def start():
     knn = NearestNeighbors(metric="cosine", algorithm="auto")
     knn.fit(transposed_df)
 
-    model_filename = "../app/model.joblib"
+    model_filename = "../lambdas/prediction-worker/model.joblib"
 
     dump(knn, model_filename)

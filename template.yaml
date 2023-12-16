@@ -18,7 +18,7 @@ Globals:
     Architectures:
       - x86_64
     Timeout: 30
-    MemorySize: 8192
+    MemorySize: 128
     AutoPublishAlias: live
     DeploymentPreference:
       Type: AllAtOnce
@@ -35,10 +35,14 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
 
-  PredictionFunction:
+  PredictionAckFunction:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
+      Role: !Ref PredictionAckRole
+      Environment:
+        Variables:
+          PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
       Events:
         Query:
           Type: Api
@@ -48,14 +52,123 @@ Resources:
             RestApiId: !Ref ApiGateway
     Metadata:
       Dockerfile: ./Dockerfile
-      DockerContext: ./app
+      DockerContext: ./lambdas/prediction-ack
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
-  PredictionFunctionLogGroup:
+  PredictionAckFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${PredictionFunction}
+      LogGroupName: !Sub /aws/lambda/${PredictionAckFunction}
       RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionAckRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestQueueSender
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:SendMessage'
+                Resource: !GetAtt PredictionRequestQueue.Arn
+
+  PredictionWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !Ref PredictionWorkerRole
+      Environment:
+        Variables:
+          PREDICTION_TABLE_NAME: !Ref PredictionTable
+      Timeout: 900
+      MemorySize: 4096
+      Events:
+        Query:
+          Type: SQS
+          Properties:
+            Queue: PredictionRequestQueue
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./lambdas/prediction-worker
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  PredictionWorkerFunctionFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PredictionAckFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionWorkerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestQueueReceiver
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:ReceiveMessage'
+                Resource: !GetAtt PredictionRequestQueue.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                  - "dynamodb:BatchWrite*"
+                  - "dynamodb:CreateTable"
+                  - "dynamodb:Delete*"
+                  - "dynamodb:Update*"
+                  - "dynamodb:PutItem"
+                Resource:
+                  - !GetAtt ShowTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !Ref ShowTable
+                  - !GetAtt RatingTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !Ref RatingTable
+                  - !GetAtt PredictionTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !Ref PredictionTable
+
+  PredictionRequestQueue:
+    Type: AWS::SQS::Queue
 
   ShowTable:
     Type: AWS::DynamoDB::Table
@@ -98,13 +211,20 @@ Resources:
         - AttributeName: UserId
           KeyType: RANGE
 
+  PredictionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      TableName: !Sub ${AWS::StackName}-PredictionsV1
+      AttributeDefinitions:
+        - AttributeName: PredictionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PredictionId
+          KeyType: HASH
+
 Outputs:
   AppApi:
     Description: "API Gateway endpoint URL for Prod stage for Inference function"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/v1/shows/recommend/"
-  PredictionFunction:
-    Description: "PredictionFunction ARN"
-    Value: !GetAtt PredictionFunction.Arn
-  PredictionFunctionIamRole:
-    Description: "Implicit IAM Role created for App function"
-    Value: !GetAtt PredictionFunctionRole.Arn

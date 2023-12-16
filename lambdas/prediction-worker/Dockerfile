@@ -9,6 +9,6 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 RUN pip install --no-cache-dir poetry==1.7.1 \
         && poetry install --no-root
 
-COPY src/canihaveatvshowplz/app.py ./
+COPY src/app.py ./
 
 CMD ["app.lambda_handler"]

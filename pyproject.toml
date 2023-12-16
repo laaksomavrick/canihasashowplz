@@ -9,8 +9,8 @@ packages = []
 [tool.poetry.group.main.dependencies]
 python = "^3.11"
 
-[tool.poetry.group.app.dependencies]
-canihaveatvshowplz-app = { path = "app", develop = true}
+[tool.poetry.group.prediction-ack.dependencies]
+prediction-ack = { path = "lambdas/prediction-ack", develop = true}
 
 [tool.poetry.group.model.dependencies]
 canihaveatvshowplz-model = { path = "model", develop = true}
@@ -22,6 +22,7 @@ black = "^23.11.0"
 
 [tool.poetry.dependencies]
 pandas = "^2.1.4"
+boto3 = "^1.34.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
