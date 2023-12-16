@@ -245,3 +245,4 @@ $RECYCLE.BIN/
 .aws-sam
 
 lambdas/prediction-worker/model.joblib
+lambdas/prediction-worker/ratings.csv

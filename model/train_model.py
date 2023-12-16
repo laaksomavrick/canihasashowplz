@@ -13,6 +13,8 @@ def start():
     knn = NearestNeighbors(metric="cosine", algorithm="auto")
     knn.fit(transposed_df)
 
+    df_filename = "../lambdas/prediction-worker/ratings.csv"
     model_filename = "../lambdas/prediction-worker/model.joblib"
 
     dump(knn, model_filename)
+    df.to_csv(df_filename, index=False)

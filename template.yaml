@@ -101,7 +101,7 @@ Resources:
         Variables:
           PREDICTION_TABLE_NAME: !Ref PredictionTable
       Timeout: !Ref WorkerTimeout
-      MemorySize: 8192
+      MemorySize: 10240
       Events:
         PredictionRequest:
           Type: SQS
