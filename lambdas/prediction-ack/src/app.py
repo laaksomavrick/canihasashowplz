@@ -5,18 +5,24 @@ from uuid import uuid4
 import boto3
 import json
 
-import boto3 as boto3
+QUEUE_URL = os.getenv("PREDICTION_QUEUE_URL")
+logger = logging.getLogger()
 
 
 def lambda_handler(event, context):
     body = event["body"]
-    print(body)
+    payload = json.loads(body)
+    shows = payload["shows"]
 
-    request_id = uuid4()
+    prediction_id = str(uuid4())
+
+    logger.info(
+        f"Received request", extra={"prediction_id": prediction_id, "shows": shows}
+    )
 
     payload = {
-        "request_id": request_id,
-        "show_titles": ["The Wire", "The Sopranos"],  # TODO: read from request body
+        "prediction_id": prediction_id,
+        "show_titles": shows,
     }
 
     response = push_to_queue(payload)
@@ -30,7 +36,7 @@ def lambda_handler(event, context):
         "statusCode": 200,
         "body": json.dumps(
             {
-                "prediction_id": request_id,
+                "prediction_id": prediction_id,
             }
         ),
     }
@@ -38,12 +44,11 @@ def lambda_handler(event, context):
 
 def push_to_queue(payload):
     try:
-        queue_url = os.getenv("PREDICTION_QUEUE_URL")
         sqs = boto3.client("sqs")
 
         json_payload = json.dumps(payload)
 
-        response = sqs.send_message(QueueUrl=queue_url, MessageBody=json_payload)
+        response = sqs.send_message(QueueUrl=QUEUE_URL, MessageBody=json_payload)
 
         return response
     except Exception as e:

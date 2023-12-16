@@ -9,6 +9,7 @@ model_file = "/opt/ml/model"
 model = joblib.load(model_file)
 
 PREDICTION_TABLE_NAME = os.getenv("PREDICTION_TABLE_NAME")
+logger = logging.getLogger()
 
 
 def lambda_handler(event, context):
@@ -17,9 +18,9 @@ def lambda_handler(event, context):
         prediction_id = payload["prediction_id"]
         show_titles = payload["show_titles"]
 
-        # TODO: log json for cloudwatch logs via python-json-logger or similar
-        logging.info(
-            f"Received prediction request: prediction_id={prediction_id} show_titles={show_titles}"
+        logger.info(
+            f"Received prediction request",
+            extra={"prediction_id": prediction_id, "show_titles": show_titles},
         )
 
         # TODO: get show ids from payload
@@ -30,7 +31,16 @@ def lambda_handler(event, context):
             ]
         )
 
+        logger.info(
+            f"Made prediction",
+            extra={"prediction_id": prediction_id, "prediction": prediction},
+        )
+
         write_to_dynamodb(PREDICTION_TABLE_NAME, prediction_id, prediction)
+
+        logger.info(
+            "Wrote prediction to dynamo", extra={"prediction_id": prediction_id}
+        )
 
     return {
         "statusCode": 200,

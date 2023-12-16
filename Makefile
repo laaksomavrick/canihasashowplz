@@ -1,6 +1,6 @@
 .PHONY: build-staging
 build-staging:
-	@sam build --cached --skip-pull-image -t template.yaml --config-env staging
+	@sam build --cached --skip-pull-image --build-in-source --parallel -t template.yaml --config-env staging
 
 .PHONY: build-prod
 build-prod:

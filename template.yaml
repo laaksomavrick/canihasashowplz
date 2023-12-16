@@ -12,6 +12,9 @@ Parameters:
   GitShaHash:
     Type: String
     Default: latest
+  WorkerTimeout:
+    Type: Number
+    Default: 900
 
 Globals:
   Function:
@@ -39,7 +42,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      Role: !Ref PredictionAckRole
+      Role: !GetAtt PredictionAckRole.Arn
       Environment:
         Variables:
           PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
@@ -50,6 +53,9 @@ Resources:
             Path: /shows/recommend
             Method: post
             RestApiId: !Ref ApiGateway
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
       DockerContext: ./lambdas/prediction-ack
@@ -90,17 +96,20 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      Role: !Ref PredictionWorkerRole
+      Role: !GetAtt PredictionWorkerRole.Arn
       Environment:
         Variables:
           PREDICTION_TABLE_NAME: !Ref PredictionTable
-      Timeout: 900
-      MemorySize: 4096
+      Timeout: !Ref WorkerTimeout
+      MemorySize: 8192
       Events:
-        Query:
+        PredictionRequest:
           Type: SQS
           Properties:
-            Queue: PredictionRequestQueue
+            Queue: !GetAtt PredictionRequestQueue.Arn
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
       DockerContext: ./lambdas/prediction-worker
@@ -109,7 +118,7 @@ Resources:
   PredictionWorkerFunctionFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${PredictionAckFunction}
+      LogGroupName: !Sub /aws/lambda/${PredictionWorkerFunction}
       RetentionInDays: !If [ IsProd, 30, 7 ]
 
   PredictionWorkerRole:
@@ -157,18 +166,20 @@ Resources:
                   - !GetAtt ShowTable.Arn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !Ref ShowTable
+                    - TableName: !GetAtt ShowTable.Arn
                   - !GetAtt RatingTable.Arn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !Ref RatingTable
+                    - TableName: !GetAtt RatingTable.Arn
                   - !GetAtt PredictionTable.Arn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !Ref PredictionTable
+                    - TableName: !GetAtt PredictionTable.Arn
 
   PredictionRequestQueue:
     Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: !Ref WorkerTimeout
 
   ShowTable:
     Type: AWS::DynamoDB::Table
