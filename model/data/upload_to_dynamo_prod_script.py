@@ -40,7 +40,11 @@ def get_data():
 
     top_shows = list(
         map(
-            lambda show: {"ShowId": show["show_id"], "Title": show["normalized_title"]},
+            lambda show: {
+                "ShowId": show["show_id"],
+                "Title": show["normalized_title"],
+                "HumanTitle": show["primary_title"],
+            },
             top_shows,
         )
     )

@@ -243,3 +243,6 @@ $RECYCLE.BIN/
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode
 
 .aws-sam
+
+lambdas/prediction-worker/model.joblib
+lambdas/prediction-worker/ratings.csv

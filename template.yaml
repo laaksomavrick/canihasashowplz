@@ -12,13 +12,16 @@ Parameters:
   GitShaHash:
     Type: String
     Default: latest
+  WorkerTimeout:
+    Type: Number
+    Default: 900
 
 Globals:
   Function:
     Architectures:
       - x86_64
     Timeout: 30
-    MemorySize: 256
+    MemorySize: 128
     AutoPublishAlias: live
     DeploymentPreference:
       Type: AllAtOnce
@@ -35,10 +38,14 @@ Resources:
       EndpointConfiguration:
         Type: REGIONAL
 
-  AppFunction:
+  PredictionAckFunction:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
+      Role: !GetAtt PredictionAckRole.Arn
+      Environment:
+        Variables:
+          PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
       Events:
         Query:
           Type: Api
@@ -46,16 +53,133 @@ Resources:
             Path: /shows/recommend
             Method: post
             RestApiId: !Ref ApiGateway
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
-      DockerContext: ./app
+      DockerContext: ./lambdas/prediction-ack
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
-  AppFunctionLogGroup:
+  PredictionAckFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${AppFunction}
+      LogGroupName: !Sub /aws/lambda/${PredictionAckFunction}
       RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionAckRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestQueueSender
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:SendMessage'
+                Resource: !GetAtt PredictionRequestQueue.Arn
+
+  PredictionWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt PredictionWorkerRole.Arn
+      Environment:
+        Variables:
+          PREDICTION_TABLE_NAME: !Ref PredictionTable
+      Timeout: !Ref WorkerTimeout
+      MemorySize: 10240
+      Events:
+        PredictionRequest:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PredictionRequestQueue.Arn
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./lambdas/prediction-worker
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  PredictionWorkerFunctionFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PredictionWorkerFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionWorkerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestQueueReceiver
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:ReceiveMessage'
+                Resource: !GetAtt PredictionRequestQueue.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                  - "dynamodb:BatchWrite*"
+                  - "dynamodb:CreateTable"
+                  - "dynamodb:Delete*"
+                  - "dynamodb:Update*"
+                  - "dynamodb:PutItem"
+                Resource:
+                  - !GetAtt ShowTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt ShowTable.Arn
+                  - !GetAtt RatingTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt RatingTable.Arn
+                  - !GetAtt PredictionTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt PredictionTable.Arn
+
+  PredictionRequestQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: !Ref WorkerTimeout
 
   ShowTable:
     Type: AWS::DynamoDB::Table
@@ -98,13 +222,20 @@ Resources:
         - AttributeName: UserId
           KeyType: RANGE
 
+  PredictionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      TableName: !Sub ${AWS::StackName}-PredictionsV1
+      AttributeDefinitions:
+        - AttributeName: PredictionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PredictionId
+          KeyType: HASH
+
 Outputs:
   AppApi:
     Description: "API Gateway endpoint URL for Prod stage for Inference function"
     Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/v1/shows/recommend/"
-  AppFunction:
-    Description: "Lambda Function ARN"
-    Value: !GetAtt AppFunction.Arn
-  AppFunctionIamRole:
-    Description: "Implicit IAM Role created for App function"
-    Value: !GetAtt AppFunctionRole.Arn
