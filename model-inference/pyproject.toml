@@ -3,7 +3,10 @@ name = "model-inference"
 version = "1.0.0"
 description = ""
 authors = []
-packages = [{include = "model-inference"}]
+packages = [{include = "src"}]
+
+[tool.poetry.scripts]
+push-to-ecr = "push_to_ecr:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -16,6 +19,8 @@ boto3 = "^1.33.11"
 community = "^1.0.0b1"
 networkx = "^3.2.1"
 matplotlib = "^3.8.2"
+flask = "^3.0.0"
+gunicorn = "^21.2.0"
 
 [build-system]
 requires = ["poetry-core"]

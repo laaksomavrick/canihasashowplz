@@ -2,28 +2,12 @@ import logging
 import os
 
 import boto3 as boto3
-import joblib
 import json
 
 import pandas as pd
 
 PREDICTION_TABLE_NAME = os.getenv("PREDICTION_TABLE_NAME")
 logger = logging.getLogger()
-
-logger.info("Reading model file")
-
-# TODO: delegate model handling to SageMaker
-model_file = "/opt/ml/model"
-model = joblib.load(model_file)
-
-logger.info("Reading ratings csv")
-
-# TODO: retrieve this data from DynamoDB
-df_file = "/opt/ml/ratings.csv"
-df = pd.read_csv(df_file)
-
-logger.info("Done static initialization!")
-
 
 def lambda_handler(event, context):
     for record in event["Records"]:
@@ -44,18 +28,18 @@ def lambda_handler(event, context):
             "447316,8c0ebcc3-fbf7-4a67-8c3e-85f13de11f8e",
         ]
 
-        prediction = predict_nearest_neighbor(show_ids, model, df)
+        # TODO: call SageMaker endpoint
 
-        logger.info(
-            f"Made prediction",
-            extra={"prediction_id": prediction_id, "prediction": prediction},
-        )
-
-        write_to_dynamodb(PREDICTION_TABLE_NAME, prediction_id, prediction)
-
-        logger.info(
-            "Wrote prediction to dynamo", extra={"prediction_id": prediction_id}
-        )
+        # logger.info(
+        #     f"Made prediction",
+        #     extra={"prediction_id": prediction_id, "prediction": prediction},
+        # )
+        #
+        # write_to_dynamodb(PREDICTION_TABLE_NAME, prediction_id, prediction)
+        #
+        # logger.info(
+        #     "Wrote prediction to dynamo", extra={"prediction_id": prediction_id}
+        # )
 
     return {
         "statusCode": 200,
