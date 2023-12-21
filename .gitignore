@@ -244,5 +244,5 @@ $RECYCLE.BIN/
 
 .aws-sam
 
-lambdas/prediction-worker/model.joblib
-lambdas/prediction-worker/ratings.csv
+model-inference/model.joblib
+model-inference/ratings.csv

@@ -235,6 +235,42 @@ Resources:
         - AttributeName: PredictionId
           KeyType: HASH
 
+  SageMakerExecutionRole:
+    Type: "AWS::IAM::Role"
+    # Define SageMaker execution role permissions
+
+  SageMakerModel:
+    Type: "AWS::SageMaker::Model"
+    Properties:
+      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
+      PrimaryContainer:
+        ModelDataUrl: "s3://your-bucket/model/model.tar.gz"  # Path to your serialized model
+        Image: "683313688378.dkr.ecr.us-west-2.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3" # ECR reference to our inference.py
+        Environment:
+          Variables:
+          # processed transposed ratings csv path,
+      # ...
+
+  SageMakerEndpointConfig:
+    Type: "AWS::SageMaker::EndpointConfig"
+    Properties:
+      EndpointConfigName: "YourEndpointConfig"
+      ProductionVariants:
+        - VariantName: "Variant1"
+          ModelName: !Ref SageMakerModel
+          InitialInstanceCount: 1
+          InstanceType: ml.m5.large
+          # Other variant properties
+          # ...
+
+  SageMakerEndpoint:
+    Type: "AWS::SageMaker::Endpoint"
+    Properties:
+      EndpointConfigName: !Ref SageMakerEndpointConfig
+      EndpointName: "YourSageMakerEndpoint"
+      # Other endpoint properties
+      # ...
+
 Outputs:
   AppApi:
     Description: "API Gateway endpoint URL for Prod stage for Inference function"

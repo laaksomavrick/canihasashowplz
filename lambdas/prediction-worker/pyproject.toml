@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "prediction-ack"
+name = "prediction-worker"
 version = "1.0.0"
 description = ""
 authors = []

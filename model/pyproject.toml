@@ -1,15 +1,14 @@
 [tool.poetry]
-name = "canihaveatvshowplz-model"
+name = "model"
 version = "1.0.0"
 description = ""
 authors = []
-packages = [{include = './**/*.py'}]
 
 [tool.poetry.scripts]
-normalize-imdb-data = "data.normalize_data_script:start"
-upload-to-dynamo-staging = "data.upload_to_dynamo_staging_script:start"
-upload-to-dynamo-prod = "data.upload_to_dynamo_prod_script:start"
-train-model = "train_model:start"
+normalize-imdb-data = "model.normalize_data_script:start"
+upload-to-dynamo-staging = "model.upload_to_dynamo_staging_script:start"
+upload-to-dynamo-prod = "model.upload_to_dynamo_prod_script:start"
+train-model = "model.train_model:start"
 
 [tool.poetry.dependencies]
 python = "^3.11"

@@ -36,6 +36,8 @@ def lambda_handler(event, context):
             extra={"prediction_id": prediction_id, "show_titles": show_titles},
         )
 
+        # TODO: write rating to dynamodb (show_id, user_id (prediction_id), IsLiked: 1)
+
         # TODO: get show ids from payload
         show_ids = [
             "365563,9c7a19bc-6f54-4d21-b6b6-0606e29fbba3",
@@ -78,7 +80,6 @@ def write_to_dynamodb(table_name, prediction_id, prediction):
         return None
 
 
-# TODO: migrate this to model pkg
 def predict_nearest_neighbor(show_ids, model=None, df=pd.DataFrame(data={})):
     if model is None:
         raise "Model must be set"
@@ -86,12 +87,6 @@ def predict_nearest_neighbor(show_ids, model=None, df=pd.DataFrame(data={})):
         return []
     if len(show_ids) == 0:
         return []
-
-    liked_shows_indices = []
-
-    for show_id in show_ids:
-        show_index = df.columns.get_loc(show_id)
-        liked_shows_indices.append(show_index)
 
     liked_shows_subset = df[show_ids]
     liked_shows_subset_transposed = liked_shows_subset.T
