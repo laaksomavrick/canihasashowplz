@@ -13,8 +13,9 @@ def start():
     knn = NearestNeighbors(metric="cosine", algorithm="auto")
     knn.fit(transposed_df)
 
+    # TODO: upload to S3 eventually
     df_filename = "../model-inference/ratings.csv"
-    model_filename = "../model-inference/model.joblib"
+    model_filename = "./model.joblib"
 
     dump(knn, model_filename)
     df.to_csv(df_filename, index=False)

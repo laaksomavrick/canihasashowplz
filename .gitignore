@@ -244,5 +244,6 @@ $RECYCLE.BIN/
 
 .aws-sam
 
-model-inference/model.joblib
+model/model/model.joblib
 model-inference/ratings.csv
+model/model/model.tar.gz

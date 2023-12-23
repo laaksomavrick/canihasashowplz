@@ -9,6 +9,8 @@ normalize-imdb-data = "model.normalize_data_script:start"
 upload-to-dynamo-staging = "model.upload_to_dynamo_staging_script:start"
 upload-to-dynamo-prod = "model.upload_to_dynamo_prod_script:start"
 train-model = "model.train_model:start"
+gzip-tar-model = "model.zip_and_tar_model:start"
+upload-model-to-s3 = "model.upload_model_to_s3:start"
 
 [tool.poetry.dependencies]
 python = "^3.11"

@@ -242,55 +242,85 @@ Resources:
       RepositoryPolicyText:
         Version: "2012-10-17"
         Statement:
-          - Sid: AllowPushPull
+          - Sid: AllowSageMakerAccess
             Effect: Allow
             Principal:
               Service: sagemaker.amazonaws.com
             Action:
+              - "ecr:BatchCheckLayerAvailability"
               - "ecr:GetDownloadUrlForLayer"
               - "ecr:BatchGetImage"
-              - "ecr:GetRepositoryPolicy"
 
+  ModelBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-modelbucket
 
-  # Upload model to S3 as a gzipped tar file
-
-
-
-#  SageMakerExecutionRole:
-#    Type: "AWS::IAM::Role"
-#    # Define SageMaker execution role permissions
+  SageMakerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "sagemaker.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: "S3AccessPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - !GetAtt ModelBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt ModelBucket.Arn
+        - PolicyName: "ECRAccessPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                Resource:
+                  - !GetAtt ModelInferenceRepository.Arn
+                  - !Sub
+                    - ${RepositoryArn}/*
+                    - RepositoryArn: !GetAtt ModelInferenceRepository.Arn
 #
 #  SageMakerModel:
-#    Type: "AWS::SageMaker::Model"
+#    Type: AWS::SageMaker::Model
 #    Properties:
 #      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
 #      PrimaryContainer:
-#        ModelDataUrl: "s3://your-bucket/model/model.tar.gz"  # Path to your serialized model
-#        Image: "683313688378.dkr.ecr.us-west-2.amazonaws.com/sagemaker-scikit-learn:0.23-1-cpu-py3" # ECR reference to our inference.py
-#        Environment:
-#          Variables:
-#          # processed transposed ratings csv path,
-#      # ...
-#
-#  SageMakerEndpointConfig:
-#    Type: "AWS::SageMaker::EndpointConfig"
-#    Properties:
-#      EndpointConfigName: "YourEndpointConfig"
-#      ProductionVariants:
-#        - VariantName: "Variant1"
-#          ModelName: !Ref SageMakerModel
-#          InitialInstanceCount: 1
-#          InstanceType: ml.m5.large
-#          # Other variant properties
-#          # ...
+#        Image: !Sub
+#                  - ${RepositoryUri}:modelinference
+#                  - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
+#        ModelDataUrl: !Sub s3://${ModelBucket}/model.tar.gz
 #
 #  SageMakerEndpoint:
-#    Type: "AWS::SageMaker::Endpoint"
+#    Type: AWS::SageMaker::Endpoint
 #    Properties:
-#      EndpointConfigName: !Ref SageMakerEndpointConfig
-#      EndpointName: "YourSageMakerEndpoint"
-#      # Other endpoint properties
-#      # ...
+#      EndpointConfigName: !GetAtt SageMakerServerlessEndpointConfig.EndpointConfigName
+#      EndpointName: !Sub ${AWS::StackName}
+#
+#  SageMakerServerlessEndpointConfig:
+#    Type: AWS::SageMaker::EndpointConfig
+#    Properties:
+#      ProductionVariants:
+#        - InitialVariantWeight: 1
+#          ModelName: !GetAtt SageMakerModel.ModelName
+#          VariantName: 'AllTraffic'
+#          ServerlessConfig:
+#            MaxConcurrency: 1
+#            MemorySizeInMB: 2048
 
 Outputs:
   AppApi:
