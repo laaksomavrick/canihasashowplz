@@ -5,6 +5,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from src.inference import load_model, predict
 
+# Comment out code and see if things work...?
+# https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-inference-code.html
 
 app = Flask(__name__)
 

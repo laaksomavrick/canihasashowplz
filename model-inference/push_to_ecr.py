@@ -6,7 +6,7 @@ import subprocess
 
 def build_docker_image(image_name, dockerfile_path):
     try:
-        subprocess.run(["docker", "build", "-t", image_name, "-f", dockerfile_path, "."], check=True)
+        subprocess.run(["docker", "build", "--platform=linux/amd64", "-t", image_name, "-f", dockerfile_path, "."], check=True)
         print("Docker image built successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Failed to build Docker image: {e}")
