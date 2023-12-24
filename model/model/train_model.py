@@ -10,7 +10,7 @@ def start():
     df = pipeline.fit_transform(train_set)
     transposed_df = df.T
 
-    knn = NearestNeighbors(metric="cosine", algorithm="auto")
+    knn = NearestNeighbors(metric="cosine", algorithm="KDTree")
     knn.fit(transposed_df)
 
     # TODO: upload to S3 eventually

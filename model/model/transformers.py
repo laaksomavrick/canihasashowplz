@@ -3,6 +3,7 @@ import networkx as nx
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import LabelEncoder
 
 
 class AddIsLikedAttribute(BaseEstimator, TransformerMixin):
@@ -13,9 +14,19 @@ class AddIsLikedAttribute(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X["is_liked"] = (X["rating"] >= 8).astype(int)
+        X["is_liked"] = (X["rating"] >= 8).astype(bool)
         return X
 
+class ShowUserEncoder(BaseEstimator, TransformerMixin):
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        label_encoder = LabelEncoder()
+        X['user_id_encoded'] = label_encoder.fit_transform(X['user_id'])
+        X['show_id_encoded'] = label_encoder.fit_transform(X['show_id'])
+        return X
 
 class DropColumns(BaseEstimator, TransformerMixin):
     def __init__(self, columns_to_drop):

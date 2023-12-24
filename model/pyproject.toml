@@ -23,6 +23,7 @@ boto3 = "^1.33.11"
 community = "^1.0.0b1"
 networkx = "^3.2.1"
 matplotlib = "^3.8.2"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]
