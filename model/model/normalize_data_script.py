@@ -13,6 +13,14 @@ def start():
     show_id_mapping = {}
     user_id_mapping = {}
 
+    # Only top 500 shows
+    popular_shows_df = shows_df.sort_values(['num_votes'], ascending=False).head(250)
+    popular_show_ids = popular_shows_df['show_id'].unique()
+    ratings_for_popular_shows = ratings_df[ratings_df['show_id'].isin(popular_show_ids)]
+
+    shows_df = popular_shows_df
+    ratings_df = ratings_for_popular_shows
+
     for df in [shows_df, ratings_df]:
         for index, row in df.iterrows():
             old_show_id = row["show_id"]

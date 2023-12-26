@@ -5,6 +5,33 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.metrics import jaccard_score
+import pandas as pd
+import time
+
+
+class JaccardDistanceTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.jaccard_distances = None
+
+    def fit(self, X, y=None):
+        interaction_matrix = X.pivot(index='user_id', columns='show_id', values='is_liked').fillna(0)
+        jaccard_distances = pd.DataFrame(index=interaction_matrix.columns, columns=interaction_matrix.columns)
+
+        for show1 in interaction_matrix.columns:
+            for show2 in interaction_matrix.columns:
+                jaccard_distances.loc[show1, show2] = 1 - jaccard_score(
+                    interaction_matrix[show1], interaction_matrix[show2]
+                )
+
+        jaccard_distances.values[[range(len(interaction_matrix.columns))]*2] = 0
+
+        self.jaccard_distances = jaccard_distances
+        return self
+
+    def transform(self, X):
+        return self.jaccard_distances
 
 class AddIsLikedAttribute(BaseEstimator, TransformerMixin):
     def __init__(self):
@@ -14,7 +41,7 @@ class AddIsLikedAttribute(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X["is_liked"] = (X["rating"] >= 8).astype(bool)
+        X["is_liked"] = (X["rating"] >= 8)
         return X
 
 class ShowUserEncoder(BaseEstimator, TransformerMixin):
@@ -57,7 +84,7 @@ class PivotShowIds(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X = X.pivot(index="user_id", columns="show_id", values="is_liked").fillna(0)
+        X = X.pivot(index="user_id_encoded", columns="show_id_encoded", values="is_liked").fillna(0)
         return X
 
 

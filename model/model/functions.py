@@ -24,7 +24,6 @@ def get_stratified_data(data=None):
         bins=[0, 25000, 50000, 100000, 250000, 500000, 1000000, np.inf],
         labels=[1, 2, 3, 4, 5, 6, 7],
     )
-    data["popularity"].hist()
 
     strat_train_set, strat_test_set = stratified_shuffle(data, "popularity")
 

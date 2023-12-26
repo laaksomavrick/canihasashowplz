@@ -6,7 +6,7 @@ from model.transformers import (
     DropColumns,
     DropDuplicates,
     PivotShowIds,
-    AddGraphPartitionIdAttribute, ShowUserEncoder,
+    AddGraphPartitionIdAttribute, ShowUserEncoder, JaccardDistanceTransformer,
 )
 
 
@@ -59,10 +59,37 @@ def get_knn_graph_pipeline():
     pipeline = Pipeline(
         [
             ("drop_duplicates", drop_duplicates),
-            # ("show_user_encoder", show_user_encoder),
             ("add_is_liked_attr", add_is_liked_attr),
+            ("show_user_encoder", show_user_encoder),
             ("drop_columns", drop_columns),
             ("pivot_show_ids", pivot_show_ids),
+        ]
+    )
+
+    return pipeline
+
+def get_jaccard_distance_pipeline():
+    add_is_liked_attr = AddIsLikedAttribute()
+    drop_duplicates = DropDuplicates(columns_to_drop_dupes=["user_id", "show_id"])
+    drop_columns = DropColumns(
+        columns_to_drop=[
+            "rating",
+            "primary_title",
+            "start_year",
+            "end_year",
+            "genres",
+            "average_rating",
+            "num_votes",
+        ]
+    )
+    jaccard_distance = JaccardDistanceTransformer()
+
+    pipeline = Pipeline(
+        [
+            ("drop_duplicates", drop_duplicates),
+            ("add_is_liked_attr", add_is_liked_attr),
+            ("drop_columns", drop_columns),
+            ("jaccard_distance", jaccard_distance)
         ]
     )
 
