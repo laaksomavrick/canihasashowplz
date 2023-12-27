@@ -8,6 +8,7 @@ PREDICTION_TABLE_NAME = os.getenv("PREDICTION_TABLE_NAME")
 SAGEMAKER_ENDPOINT_NAME = os.getenv("PREDICTION_ENDPOINT_NAME")
 logger = logging.getLogger()
 
+
 def lambda_handler(event, context):
     for record in event["Records"]:
         payload = json.loads(record["body"])
@@ -23,8 +24,8 @@ def lambda_handler(event, context):
 
         # TODO: get show ids from payload
         show_ids = [
-            "365563,9c7a19bc-6f54-4d21-b6b6-0606e29fbba3",
-            "447316,8c0ebcc3-fbf7-4a67-8c3e-85f13de11f8e",
+            "b442937f-19dc-4429-96f5-6d4b6e733f2c",
+            "387c6565-98ab-4342-ae8e-fb7faef78af0",
         ]
 
         prediction = get_prediction(show_ids)
@@ -50,7 +51,7 @@ def save_prediction(table_name, prediction_id, prediction):
 
     item = {
         "PredictionId": {"S": prediction_id},
-        "Prediction": {"S": prediction},
+        "Prediction": {"S": json.dumps(prediction)},
     }
 
     try:
@@ -63,20 +64,18 @@ def save_prediction(table_name, prediction_id, prediction):
         return None
 
 
-def get_prediction(show_ids = []):
-    runtime = boto3.client('sagemaker-runtime')
+def get_prediction(show_ids=[]):
+    runtime = boto3.client("sagemaker-runtime")
 
-    payload = {
-        'show_ids': show_ids
-    }
+    payload = {"show_ids": show_ids}
     payload_json = json.dumps(payload)
 
     response = runtime.invoke_endpoint(
         EndpointName=SAGEMAKER_ENDPOINT_NAME,
-        ContentType='application/json',
-        Body=payload_json
+        ContentType="application/json",
+        Body=payload_json,
     )
 
-    result = json.loads(response['Body'].read().decode())
+    result = json.loads(response["Body"].read().decode())
 
     return result

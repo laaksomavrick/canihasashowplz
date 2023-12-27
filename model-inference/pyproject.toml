@@ -7,6 +7,7 @@ packages = [{include = "src"}]
 
 [tool.poetry.scripts]
 push-to-ecr = "push_to_ecr:main"
+push-encoder-to-s3 = "push_encoder_to_s3:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"

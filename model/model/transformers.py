@@ -16,8 +16,12 @@ class JaccardDistanceTransformer(BaseEstimator, TransformerMixin):
         self.jaccard_distances = None
 
     def fit(self, X, y=None):
-        interaction_matrix = X.pivot(index='user_id', columns='show_id', values='is_liked').fillna(0)
-        jaccard_distances = pd.DataFrame(index=interaction_matrix.columns, columns=interaction_matrix.columns)
+        interaction_matrix = X.pivot(
+            index="user_id", columns="show_id", values="is_liked"
+        ).fillna(0)
+        jaccard_distances = pd.DataFrame(
+            index=interaction_matrix.columns, columns=interaction_matrix.columns
+        )
 
         for show1 in interaction_matrix.columns:
             for show2 in interaction_matrix.columns:
@@ -25,13 +29,14 @@ class JaccardDistanceTransformer(BaseEstimator, TransformerMixin):
                     interaction_matrix[show1], interaction_matrix[show2]
                 )
 
-        jaccard_distances.values[[range(len(interaction_matrix.columns))]*2] = 0
+        jaccard_distances.values[[range(len(interaction_matrix.columns))] * 2] = 0
 
         self.jaccard_distances = jaccard_distances
         return self
 
     def transform(self, X):
         return self.jaccard_distances
+
 
 class AddIsLikedAttribute(BaseEstimator, TransformerMixin):
     def __init__(self):
@@ -41,19 +46,23 @@ class AddIsLikedAttribute(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X["is_liked"] = (X["rating"] >= 8)
+        X["is_liked"] = X["rating"] >= 8
         return X
 
+
 class ShowUserEncoder(BaseEstimator, TransformerMixin):
+    def __init__(self, encoder=LabelEncoder()):
+        self.encoder = encoder
+        super()
 
     def fit(self, X, y=None):
         return self
 
     def transform(self, X):
-        label_encoder = LabelEncoder()
-        X['user_id_encoded'] = label_encoder.fit_transform(X['user_id'])
-        X['show_id_encoded'] = label_encoder.fit_transform(X['show_id'])
+        X["user_id_encoded"] = self.encoder.fit_transform(X["user_id"])
+        X["show_id_encoded"] = self.encoder.fit_transform(X["show_id"])
         return X
+
 
 class DropColumns(BaseEstimator, TransformerMixin):
     def __init__(self, columns_to_drop):
@@ -84,7 +93,9 @@ class PivotShowIds(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X = X.pivot(index="user_id_encoded", columns="show_id_encoded", values="is_liked").fillna(0)
+        X = X.pivot(
+            index="user_id_encoded", columns="show_id_encoded", values="is_liked"
+        ).fillna(0)
         return X
 
 

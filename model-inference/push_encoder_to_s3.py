@@ -1,12 +1,12 @@
 import boto3
 
 
-def start():
+def main():
     s3_client = boto3.client("s3")
 
-    file_path = "model/graph.tar.gz"
+    file_path = "label_encoder.pkl"
     bucket_name = "canihaveatvshowplz-staging-modelbucket"
-    object_name = "graph.tar.gz"
+    object_name = "label_encoder.pkl"
 
     try:
         # Upload the file

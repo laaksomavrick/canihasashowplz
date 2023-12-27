@@ -1,62 +1,85 @@
+import io
 import os
+import pickle
 
-import joblib
-import pandas as pd
+import boto3
 import logging
+import joblib
 
+# TODO: improve logging in cw logs
 logger = logging.getLogger()
-df = None
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler())
+
+LABEL_ENCODER = None
 
 
-def get_df():
-    # TODO: read this from S3 instead
-    logger.info("Retrieving ratings dataframe")
-    global df
-    if df is None:
-        logger.info("Reading from file")
-        df_file = "/opt/ml/model/ratings.csv"
-        df = pd.read_csv(df_file)
+def get_label_encoder_from_s3():
+    bucket_name = "canihaveatvshowplz-staging-modelbucket"
+    object_name = "label_encoder.pkl"
+    s3 = boto3.client("s3")
 
-    logger.info("Found ratings")
-    return df
+    response = s3.get_object(Bucket=bucket_name, Key=object_name)
+
+    content = response["Body"].read()
+
+    label_encoder_file = io.BytesIO(content)
+
+    loaded_data = joblib.load(label_encoder_file)
+    return loaded_data
+
+
+def get_label_encoder():
+    global LABEL_ENCODER
+    if LABEL_ENCODER is None:
+        LABEL_ENCODER = get_label_encoder_from_s3()
+
+    return LABEL_ENCODER
+
 
 def load_model(model_dir):
-    logger.info("Retrieving model")
-    return joblib.load(os.path.join(model_dir, "model.joblib"))
+    graph_path = os.path.join(model_dir, "graph.pkl")
+    with open(graph_path, "rb") as f:
+        loaded_graph = pickle.load(f)
+        return loaded_graph
 
 
 def predict(body, model):
-    logger.info("Making a prediction", extra=body)
-    ratings_df = get_df()
+    top_n = 5
+    logger.info("Making a prediction")
+    logger.info(body)
 
     show_ids = body["show_ids"]
 
     if model is None:
         raise "Model must be set"
-    if (len(ratings_df)) == 0:
-        return []
     if len(show_ids) == 0:
         return []
 
-    liked_shows_subset = ratings_df[show_ids]
-    liked_shows_subset_transposed = liked_shows_subset.T
+    label_encoder = get_label_encoder()
+    show_ids = label_encoder.transform(show_ids)
 
-    distances, indices = model.kneighbors(liked_shows_subset_transposed, n_neighbors=3)
+    similar_shows = {}
 
-    similar_shows_indices = indices.flatten().tolist()
-    similar_show_ids = ratings_df.columns[similar_shows_indices]
-    similar_distances = distances.flatten()
+    for show_id in show_ids:
+        if show_id in model:
+            neighbors = list(model.neighbors(show_id))
 
-    similar_shows_with_distances = dict(zip(similar_show_ids, similar_distances))
-    sorted_similar_shows = sorted(
-        similar_shows_with_distances.items(), key=lambda x: x[1]
-    )
+            for neighbor in neighbors:
+                if neighbor != show_id:
+                    if neighbor in similar_shows:
+                        similar_shows[neighbor] += 1
+                    else:
+                        similar_shows[neighbor] = 1
 
-    sorted_show_ids = [show[0] for show in sorted_similar_shows]
-    sorted_show_ids = [x for x in sorted_show_ids if x not in show_ids]
+    sorted_shows = sorted(similar_shows.items(), key=lambda x: x[1], reverse=True)
 
-    predictions = {"predictions": sorted_show_ids}
+    recommended_shows = [
+        show[0] for show in sorted_shows[:top_n] if show[0] not in show_ids
+    ]
+    recommended_shows = label_encoder.inverse_transform(recommended_shows).tolist()
 
-    logger.info("Predicted", extra=predictions)
+    logger.info("Made prediction")
+    logger.info(recommended_shows)
 
-    return predictions
+    return recommended_shows
