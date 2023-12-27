@@ -244,5 +244,6 @@ $RECYCLE.BIN/
 
 .aws-sam
 
-lambdas/prediction-worker/model.joblib
-lambdas/prediction-worker/ratings.csv
+model/graph.pkl
+model-inference/label_encoder.pkl
+model/model/graph.tar.gz

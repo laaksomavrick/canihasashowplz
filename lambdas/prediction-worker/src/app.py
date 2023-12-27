@@ -2,27 +2,11 @@ import logging
 import os
 
 import boto3 as boto3
-import joblib
 import json
 
-import pandas as pd
-
 PREDICTION_TABLE_NAME = os.getenv("PREDICTION_TABLE_NAME")
+SAGEMAKER_ENDPOINT_NAME = os.getenv("PREDICTION_ENDPOINT_NAME")
 logger = logging.getLogger()
-
-logger.info("Reading model file")
-
-# TODO: delegate model handling to SageMaker
-model_file = "/opt/ml/model"
-model = joblib.load(model_file)
-
-logger.info("Reading ratings csv")
-
-# TODO: retrieve this data from DynamoDB
-df_file = "/opt/ml/ratings.csv"
-df = pd.read_csv(df_file)
-
-logger.info("Done static initialization!")
 
 
 def lambda_handler(event, context):
@@ -36,20 +20,22 @@ def lambda_handler(event, context):
             extra={"prediction_id": prediction_id, "show_titles": show_titles},
         )
 
+        # TODO: write rating to dynamodb (show_id, user_id (prediction_id), IsLiked: 1)
+
         # TODO: get show ids from payload
         show_ids = [
-            "365563,9c7a19bc-6f54-4d21-b6b6-0606e29fbba3",
-            "447316,8c0ebcc3-fbf7-4a67-8c3e-85f13de11f8e",
+            "b442937f-19dc-4429-96f5-6d4b6e733f2c",
+            "387c6565-98ab-4342-ae8e-fb7faef78af0",
         ]
 
-        prediction = predict_nearest_neighbor(show_ids, model, df)
+        prediction = get_prediction(show_ids)
 
         logger.info(
             f"Made prediction",
             extra={"prediction_id": prediction_id, "prediction": prediction},
         )
 
-        write_to_dynamodb(PREDICTION_TABLE_NAME, prediction_id, prediction)
+        save_prediction(PREDICTION_TABLE_NAME, prediction_id, prediction)
 
         logger.info(
             "Wrote prediction to dynamo", extra={"prediction_id": prediction_id}
@@ -60,12 +46,12 @@ def lambda_handler(event, context):
     }
 
 
-def write_to_dynamodb(table_name, prediction_id, prediction):
+def save_prediction(table_name, prediction_id, prediction):
     dynamodb = boto3.client("dynamodb")
 
     item = {
         "PredictionId": {"S": prediction_id},
-        "Prediction": {"S": prediction},
+        "Prediction": {"S": json.dumps(prediction)},
     }
 
     try:
@@ -78,39 +64,18 @@ def write_to_dynamodb(table_name, prediction_id, prediction):
         return None
 
 
-# TODO: migrate this to model pkg
-def predict_nearest_neighbor(show_ids, model=None, df=pd.DataFrame(data={})):
-    if model is None:
-        raise "Model must be set"
-    if (len(df)) == 0:
-        return []
-    if len(show_ids) == 0:
-        return []
+def get_prediction(show_ids=[]):
+    runtime = boto3.client("sagemaker-runtime")
 
-    liked_shows_indices = []
+    payload = {"show_ids": show_ids}
+    payload_json = json.dumps(payload)
 
-    for show_id in show_ids:
-        show_index = df.columns.get_loc(show_id)
-        liked_shows_indices.append(show_index)
-
-    liked_shows_subset = df[show_ids]
-    liked_shows_subset_transposed = liked_shows_subset.T
-
-    distances, indices = model.kneighbors(liked_shows_subset_transposed, n_neighbors=3)
-
-    # Rank based on distance
-    similar_shows_indices = indices.flatten().tolist()
-    similar_show_ids = df.columns[similar_shows_indices]
-    similar_distances = distances.flatten()
-
-    similar_shows_with_distances = dict(zip(similar_show_ids, similar_distances))
-    sorted_similar_shows = sorted(
-        similar_shows_with_distances.items(), key=lambda x: x[1]
+    response = runtime.invoke_endpoint(
+        EndpointName=SAGEMAKER_ENDPOINT_NAME,
+        ContentType="application/json",
+        Body=payload_json,
     )
 
-    sorted_show_ids = [show[0] for show in sorted_similar_shows]
+    result = json.loads(response["Body"].read().decode())
 
-    # Filter shows included in provided show_ids
-    sorted_show_ids = [x for x in sorted_show_ids if x not in show_ids]
-
-    return sorted_show_ids
+    return result
