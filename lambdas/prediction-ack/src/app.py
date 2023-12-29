@@ -1,18 +1,20 @@
 import logging
-import os
 from uuid import uuid4
 
-import boto3
 import json
 
-QUEUE_URL = os.getenv("PREDICTION_QUEUE_URL")
+from src.helpers import push_to_queue
+
 logger = logging.getLogger()
 
 
 def lambda_handler(event, context):
     body = event["body"]
     payload = json.loads(body)
-    shows = payload["shows"]
+    shows = payload.get("shows", [])
+
+    if len(shows) == 0:
+        return {"statusCode": 400}
 
     prediction_id = str(uuid4())
 
@@ -25,7 +27,7 @@ def lambda_handler(event, context):
         "show_titles": shows,
     }
 
-    response = push_to_queue(payload)
+    response = push_to_queue(payload, logger)
 
     if response is None:
         return {
@@ -40,17 +42,3 @@ def lambda_handler(event, context):
             }
         ),
     }
-
-
-def push_to_queue(payload):
-    try:
-        sqs = boto3.client("sqs")
-
-        json_payload = json.dumps(payload)
-
-        response = sqs.send_message(QueueUrl=QUEUE_URL, MessageBody=json_payload)
-
-        return response
-    except Exception as e:
-        logging.error(str(e))
-        return None
