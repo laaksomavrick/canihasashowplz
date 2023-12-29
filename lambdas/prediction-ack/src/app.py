@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import json
 
-from src.helpers import push_to_queue
+from src.helpers import push_to_queue, get_show_ids_for_titles
 
 logger = logging.getLogger()
 
@@ -13,18 +13,27 @@ def lambda_handler(event, context):
     payload = json.loads(body)
     shows = payload.get("shows", [])
 
+    logger.info(f"Received request", extra={"shows": shows})
+
     if len(shows) == 0:
         return {"statusCode": 400}
 
-    prediction_id = str(uuid4())
+    show_ids = get_show_ids_for_titles(shows)
 
-    logger.info(
-        f"Received request", extra={"prediction_id": prediction_id, "shows": shows}
-    )
+    # TODO: add error to response when show_title is dropped because it doesnt exist
+    # TODO: add shows that arent in data set to data set
+
+    if len(show_ids) == 0:
+        logger.warning("Found no show_ids for shows", extra={"shows": shows})
+        return {"statusCode": 404}
+
+    logger.info(f"Found show_ids", extra={"show_ids": show_ids})
+
+    prediction_id = str(uuid4())
 
     payload = {
         "prediction_id": prediction_id,
-        "show_titles": shows,
+        "show_ids": show_ids,
     }
 
     response = push_to_queue(payload, logger)

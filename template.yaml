@@ -46,6 +46,7 @@ Resources:
       Environment:
         Variables:
           PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
+          SHOW_TABLE_NAME: !Ref ShowTable
       Events:
         Query:
           Type: Api
@@ -91,6 +92,23 @@ Resources:
                 Action:
                   - 'sqs:SendMessage'
                 Resource: !GetAtt PredictionRequestQueue.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionAckData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - !GetAtt ShowTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt ShowTable.Arn
 
   PredictionWorkerFunction:
     Type: AWS::Serverless::Function
@@ -100,6 +118,7 @@ Resources:
       Environment:
         Variables:
           PREDICTION_TABLE_NAME: !Ref PredictionTable
+          RATING_TABLE_NAME: !Ref RatingTable
           PREDICTION_ENDPOINT_NAME: !GetAtt SageMakerEndpoint.EndpointName
       Timeout: !Ref WorkerTimeout
       Events:
