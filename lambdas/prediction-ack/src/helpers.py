@@ -1,4 +1,5 @@
 import os
+import re
 
 import boto3
 import json
@@ -28,10 +29,11 @@ def get_show_ids_for_titles(show_titles):
     show_ids = []
 
     for title in show_titles:
+        normalized = normalize_show_title(title)
         response = table.query(
             IndexName="TitleGSI",
             KeyConditionExpression="Title = :title",
-            ExpressionAttributeValues={":title": title},
+            ExpressionAttributeValues={":title": normalized},
             ProjectionExpression="Title, ShowId",
         )
 
@@ -41,3 +43,10 @@ def get_show_ids_for_titles(show_titles):
                 show_ids.append(show_id)
 
     return show_ids
+
+
+# TODO: import from model...?
+def normalize_show_title(primary_title):
+    title = re.sub(r"[^a-zA-Z0-9]", "", primary_title)
+    title = title.lower()
+    return title

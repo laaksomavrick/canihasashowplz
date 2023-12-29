@@ -43,10 +43,11 @@ def write_is_liked(show_ids):
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(RATING_TABLE_NAME)
 
-    user_id = uuid.uuid4()
+    # TODO: support user_id as param from FE
+    user_id = str(uuid.uuid4())
     is_liked = True
 
     for show_id in show_ids:
-        item = {"ShowId": show_id, "UserId": user_id, "IsLiked": is_liked}
+        item = {"ShowId": str(show_id), "UserId": user_id, "IsLiked": is_liked}
 
         table.put_item(Item=item)

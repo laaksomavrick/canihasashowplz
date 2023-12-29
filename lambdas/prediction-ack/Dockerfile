@@ -7,6 +7,6 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 RUN pip install --no-cache-dir poetry==1.7.1 \
         && poetry install --no-root
 
-COPY src/app.py ./
+COPY src src
 
-CMD ["app.lambda_handler"]
+CMD ["src/app.lambda_handler"]

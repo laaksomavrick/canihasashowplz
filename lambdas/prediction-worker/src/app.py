@@ -14,10 +14,15 @@ def lambda_handler(event, context):
 
         logger.info(
             f"Received prediction request",
-            extra={"prediction_id": prediction_id, "show_titles": show_ids},
+            extra={"prediction_id": prediction_id, "show_ids": show_ids},
         )
 
         write_is_liked(show_ids)
+
+        logger.info(
+            f"Wrote is liked",
+            extra={"prediction_id": prediction_id, "show_ids": show_ids},
+        )
 
         prediction = get_prediction(show_ids)
 
