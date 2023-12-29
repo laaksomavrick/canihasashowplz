@@ -1,37 +1,55 @@
 import logging
-import os
 from uuid import uuid4
 
-import boto3
 import json
 
-QUEUE_URL = os.getenv("PREDICTION_QUEUE_URL")
+from src.helpers import push_to_queue, get_show_ids_for_titles
+
 logger = logging.getLogger()
 
 
 def lambda_handler(event, context):
     body = event["body"]
     payload = json.loads(body)
-    shows = payload["shows"]
+    shows = payload.get("shows", [])
+
+    logger.info(f"Received request", extra={"shows": shows})
+
+    if len(shows) == 0:
+        return {"statusCode": 400}
+
+    show_ids = get_show_ids_for_titles(shows)
+
+    # TODO: add error to response when show_title is dropped because it doesnt exist
+    # TODO: add shows that arent in data set to data set
+
+    if len(show_ids) == 0:
+        logger.warning("Found no show_ids for shows", extra={"shows": shows})
+        return {"statusCode": 404}
+
+    logger.info(f"Found show_ids", extra={"show_ids": show_ids})
 
     prediction_id = str(uuid4())
 
-    logger.info(
-        f"Received request", extra={"prediction_id": prediction_id, "shows": shows}
-    )
-
     payload = {
         "prediction_id": prediction_id,
-        "show_titles": shows,
+        "show_ids": show_ids,
     }
 
-    response = push_to_queue(payload)
+    response = push_to_queue(payload, logger)
 
     if response is None:
+        logger.error(
+            f"Something went wrong pushing to queue",
+            extra={"prediction_id": prediction_id, "response": response},
+        )
         return {
             "statusCode": 500,
         }
 
+    logger.info(
+        "Successfully pushed to queue, ending", extra={"prediction_id": prediction_id}
+    )
     return {
         "statusCode": 200,
         "body": json.dumps(
@@ -40,17 +58,3 @@ def lambda_handler(event, context):
             }
         ),
     }
-
-
-def push_to_queue(payload):
-    try:
-        sqs = boto3.client("sqs")
-
-        json_payload = json.dumps(payload)
-
-        response = sqs.send_message(QueueUrl=QUEUE_URL, MessageBody=json_payload)
-
-        return response
-    except Exception as e:
-        logging.error(str(e))
-        return None
