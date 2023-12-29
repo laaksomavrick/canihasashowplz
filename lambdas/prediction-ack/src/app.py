@@ -30,10 +30,17 @@ def lambda_handler(event, context):
     response = push_to_queue(payload, logger)
 
     if response is None:
+        logger.error(
+            f"Something went wrong pushing to queue",
+            extra={"prediction_id": prediction_id, "response": response},
+        )
         return {
             "statusCode": 500,
         }
 
+    logger.info(
+        "Successfully pushed to queue, ending", extra={"prediction_id": prediction_id}
+    )
     return {
         "statusCode": 200,
         "body": json.dumps(

@@ -1,7 +1,7 @@
 import json
 import uuid
 from unittest import TestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.app import lambda_handler
 
 empty_uuid = uuid.UUID(int=0)
