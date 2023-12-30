@@ -363,7 +363,7 @@ Resources:
 #      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
 #      PrimaryContainer:
 #        Image: !Sub
-#                  - ${RepositoryUri}:1.0.4
+#                  - ${RepositoryUri}:1.0.6
 #                  - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
 #        ModelDataUrl: !Sub s3://${ModelBucket}/graph.tar.gz
 #

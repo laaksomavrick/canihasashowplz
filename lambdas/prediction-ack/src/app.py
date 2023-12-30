@@ -15,13 +15,13 @@ def lambda_handler(event, context):
 
     logger.info(f"Received request", extra={"shows": shows})
 
-    if len(shows) == 0:
+    if len(shows) <= 0:
+        return {"statusCode": 400}
+
+    if len(shows) > 5:
         return {"statusCode": 400}
 
     show_ids = get_show_ids_for_titles(shows)
-
-    # TODO: add error to response when show_title is dropped because it doesnt exist
-    # TODO: add shows that arent in data set to data set
 
     if len(show_ids) == 0:
         logger.warning("Found no show_ids for shows", extra={"shows": shows})
