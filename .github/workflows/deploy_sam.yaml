@@ -1,15 +1,11 @@
 name: Deploy lambdas
 
-#on:
-#  push:
-#    branches: [ main ]
-#    paths:
-#     - 'lambdas/**'
-#     - 'template.yaml'
-
 on:
-  pull_request:
+  push:
     branches: [ main ]
+    paths:
+     - 'lambdas/**'
+     - 'template.yaml'
 
 jobs:
   deploy-sam:
