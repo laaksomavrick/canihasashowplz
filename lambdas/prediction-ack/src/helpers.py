@@ -1,5 +1,6 @@
 import os
 import re
+import uuid
 
 import boto3
 import json
@@ -37,10 +38,17 @@ def get_show_ids_for_titles(show_titles):
             ProjectionExpression="Title, ShowId",
         )
 
-        if "Items" in response:
+        items = response.get("Items", [])
+
+        if len(items) > 0:
             for item in response["Items"]:
                 show_id = item["ShowId"]
                 show_ids.append(show_id)
+        else:
+            show_id = str(uuid.uuid4())
+            item = {"ShowId": show_id, "Title": normalized, "HumanTitle": title}
+            table.put_item(Item=item)
+            show_ids.append(show_id)
 
     return show_ids
 

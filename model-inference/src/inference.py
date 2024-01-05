@@ -44,6 +44,20 @@ def load_model(model_dir):
         return loaded_graph
 
 
+def get_encoded_show_ids(show_ids=[], label_encoder=None, logger=None):
+    encoded_show_ids = []
+
+    for show_id in show_ids:
+        try:
+            encoded_show_id = label_encoder.transform([show_id])[0]
+            encoded_show_ids.append(encoded_show_id)
+        except:
+            logger.warn(f"Did not recognize show_id={show_id}")
+            continue
+
+    return encoded_show_ids
+
+
 def predict(body, model):
     top_n = 5
     logger.info("Making a prediction")
@@ -57,7 +71,9 @@ def predict(body, model):
         return []
 
     label_encoder = get_label_encoder()
-    show_ids = label_encoder.transform(show_ids)
+    show_ids = get_encoded_show_ids(
+        show_ids=show_ids, label_encoder=label_encoder, logger=logger
+    )
 
     similar_shows = {}
 
