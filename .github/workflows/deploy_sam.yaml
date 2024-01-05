@@ -5,11 +5,76 @@ on:
     branches: [ main ]
     paths:
      - 'lambdas/**'
+     - 'model-inference/**'
      - 'template.yaml'
 
+env:
+  DOCKER_REGISTRY_URL: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
+  DOCKER_REPO_URL: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_REPO_NAME }}
+
 jobs:
+  model-inference-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            changed:
+              - 'model-inference/version'
+
+  upload-model-inference-image:
+    name: Upload model inference image to ECR
+    needs: [model-inference-changes]
+    if: ${{ needs.model-inference-changes.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+
+      - name: Set DOCKER_IMAGE_TAG environment variable
+        run: echo "DOCKER_IMAGE_TAG=$(cat model-inference/version)" >> $GITHUB_ENV
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: latest
+          driver-opts: 'image=moby/buildkit:v0.10.5'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR registry
+        run: aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.DOCKER_REGISTRY_URL }}
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v5
+        with:
+          context: model-inference
+          platforms: linux/amd64
+          tags: ${{ env.DOCKER_REPO_URL }}:${{ env.DOCKER_IMAGE_TAG }}
+          push: true
+
   deploy-sam:
     name: Build and deploy SAM infrastructure
+    needs: [model-inference-changes, upload-model-inference-image]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -24,7 +89,9 @@ jobs:
         with:
           role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
           aws-region: ${{ vars.AWS_REGION }}
+      - name: Set DOCKER_IMAGE_TAG environment variable
+        run: echo "DOCKER_IMAGE_TAG=$(cat model-inference/version)" >> $GITHUB_ENV
       - name: Build SAM template
-        run: make build-prod
+        run: sam build -t template.yaml --config-env prod --parameter-overrides ModelInferenceVersion=${{ env.DOCKER_IMAGE_TAG }}
       - name: Deploy SAM template changes
-        run: make deploy-prod-ci
+        run: sam deploy --config-env prod --no-confirm-changeset --no-fail-on-empty-changeset --resolve-image-repos --parameter-overrides ModelInferenceVersion=${{ env.DOCKER_IMAGE_TAG }}
