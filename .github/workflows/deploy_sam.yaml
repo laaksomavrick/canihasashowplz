@@ -1,0 +1,30 @@
+name: Deploy lambdas
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+     - 'lambdas/**'
+     - 'template.yaml'
+
+jobs:
+  deploy-sam:
+    name: Build and deploy SAM infrastructure
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v1
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Build SAM template
+        run: make build-prod
+      - name: Deploy SAM template changes
+        run: make deploy-prod-ci

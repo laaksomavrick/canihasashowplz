@@ -4,7 +4,7 @@ build-staging:
 
 .PHONY: build-prod
 build-prod:
-	@sam build -t template.yaml -config-env prod
+	@sam build -t template.yaml --config-env prod
 
 .PHONY: deploy-staging
 deploy-staging:
@@ -13,3 +13,7 @@ deploy-staging:
 .PHONY: deploy-prod
 deploy-prod:
 	@sam deploy --config-env prod --resolve-image-repos
+
+.PHONY: deploy-prod-ci
+deploy-prod-ci:
+	@sam deploy --config-env prod --no-confirm-changeset --no-fail-on-empty-changeset --resolve-image-repos

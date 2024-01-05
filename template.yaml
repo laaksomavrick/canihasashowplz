@@ -119,7 +119,7 @@ Resources:
         Variables:
           PREDICTION_TABLE_NAME: !Ref PredictionTable
           RATING_TABLE_NAME: !Ref RatingTable
-          PREDICTION_ENDPOINT_NAME: !GetAtt SageMakerEndpoint.EndpointName
+#          PREDICTION_ENDPOINT_NAME: !GetAtt SageMakerEndpoint.EndpointName
       Timeout: !Ref WorkerTimeout
       Events:
         PredictionRequest:
@@ -357,32 +357,32 @@ Resources:
                 Action: "ecr:*"
                 Resource: "*"
 
-  SageMakerModel:
-    Type: AWS::SageMaker::Model
-    Properties:
-      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
-      PrimaryContainer:
-        Image: !Sub
-                  - ${RepositoryUri}:1.0.4
-                  - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
-        ModelDataUrl: !Sub s3://${ModelBucket}/graph.tar.gz
-
-  SageMakerEndpoint:
-    Type: AWS::SageMaker::Endpoint
-    Properties:
-      EndpointConfigName: !GetAtt SageMakerServerlessEndpointConfig.EndpointConfigName
-      EndpointName: !Sub ${AWS::StackName}
-
-  SageMakerServerlessEndpointConfig:
-    Type: AWS::SageMaker::EndpointConfig
-    Properties:
-      ProductionVariants:
-        - InitialVariantWeight: 1
-          ModelName: !GetAtt SageMakerModel.ModelName
-          VariantName: 'AllTrafficV3'
-          ServerlessConfig:
-            MaxConcurrency: 1
-            MemorySizeInMB: 2048
+#  SageMakerModel:
+#    Type: AWS::SageMaker::Model
+#    Properties:
+#      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
+#      PrimaryContainer:
+#        Image: !Sub
+#                  - ${RepositoryUri}:1.0.4
+#                  - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
+#        ModelDataUrl: !Sub s3://${ModelBucket}/graph.tar.gz
+#
+#  SageMakerEndpoint:
+#    Type: AWS::SageMaker::Endpoint
+#    Properties:
+#      EndpointConfigName: !GetAtt SageMakerServerlessEndpointConfig.EndpointConfigName
+#      EndpointName: !Sub ${AWS::StackName}
+#
+#  SageMakerServerlessEndpointConfig:
+#    Type: AWS::SageMaker::EndpointConfig
+#    Properties:
+#      ProductionVariants:
+#        - InitialVariantWeight: 1
+#          ModelName: !GetAtt SageMakerModel.ModelName
+#          VariantName: 'AllTrafficV3'
+#          ServerlessConfig:
+#            MaxConcurrency: 1
+#            MemorySizeInMB: 2048
 
 Outputs:
   AppApi:
