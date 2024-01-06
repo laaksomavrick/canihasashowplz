@@ -7,14 +7,13 @@ from model_training.functions import normalize_show_title
 
 def start():
     project_root = dirname(dirname(abspath(__file__)))
-    shows_df = read_csv(join(project_root, "model/data/imdb_shows.csv"))
-    ratings_df = read_csv(join(project_root, "model/data/imdb_ratings.csv"))
+    shows_df = read_csv(join(project_root, "model_training/data/imdb_shows.csv"))
+    ratings_df = read_csv(join(project_root, "model_training/data/imdb_ratings.csv"))
 
     show_id_mapping = {}
     user_id_mapping = {}
 
-    # Only top 500 shows
-    popular_shows_df = shows_df.sort_values(["num_votes"], ascending=False).head(250)
+    popular_shows_df = shows_df.sort_values(["num_votes"], ascending=False)
     popular_show_ids = popular_shows_df["show_id"].unique()
     ratings_for_popular_shows = ratings_df[ratings_df["show_id"].isin(popular_show_ids)]
 
@@ -44,5 +43,5 @@ def start():
 
     ratings_df = ratings_df.drop_duplicates(subset=["show_id", "user_id"])
 
-    shows_df.to_csv(join(project_root, "model/data/shows.csv"), index=False)
-    ratings_df.to_csv(join(project_root, "model/data/ratings.csv"), index=False)
+    shows_df.to_csv(join(project_root, "model_training/data/shows.csv"), index=False)
+    ratings_df.to_csv(join(project_root, "model_training/data/ratings.csv"), index=False)

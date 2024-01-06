@@ -8,11 +8,10 @@ from model_training.pipelines import get_knn_graph_pipeline
 from model_training.functions import get_stratified_data
 from joblib import dump
 
-# rename "model" to "model-training"
-# Get all data in Dynamo (shows, ratings)
 # Configure an export (manually triggerable for the moment) to write all data in Dynamo to S3
+# => Making this into a lambda would facilitate a recurring step function job
 
-# Update get_stratified_data to pull data from S3
+# Update get_stratified_data to pull data from S3 via an ENV variable we'll later inject in cfn
 # Run pipeline steps
 # Save model and binary encoder to S3 with a tag that can relate data to the model and relate training code to the model
 # e.g. tvshowgraph-$trainingsetid-$modelcodeidshipping

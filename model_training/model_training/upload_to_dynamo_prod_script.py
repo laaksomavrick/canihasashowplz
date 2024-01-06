@@ -26,8 +26,8 @@ def start():
 
 def get_data():
     project_root = dirname(dirname(abspath(__file__)))
-    shows_df = read_csv(join(project_root, "data/shows.csv"))
-    ratings_df = read_csv(join(project_root, "data/ratings.csv"))
+    shows_df = read_csv(join(project_root, "model_training/data/shows.csv"))
+    ratings_df = read_csv(join(project_root, "model_training/data/ratings.csv"))
 
     top_shows = shows_df.sort_values("num_votes", ascending=False).to_dict(
         orient="records"
