@@ -3,7 +3,7 @@ import os
 from flask import Flask, request
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from src.inference import load_model, predict
+from model_inference.inference import load_model, predict
 
 app = Flask(__name__)
 

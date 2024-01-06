@@ -1,14 +1,11 @@
 import community
 import networkx as nx
-import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.metrics import jaccard_score
 import pandas as pd
-import time
 
 
 class JaccardDistanceTransformer(BaseEstimator, TransformerMixin):

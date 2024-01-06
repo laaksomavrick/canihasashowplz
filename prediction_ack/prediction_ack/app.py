@@ -2,8 +2,7 @@ import logging
 from uuid import uuid4
 
 import json
-
-from src.helpers import push_to_queue, get_show_ids_for_titles
+from prediction_ack.helpers import push_to_queue, get_show_ids_for_titles
 
 logger = logging.getLogger()
 

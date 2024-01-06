@@ -1,13 +1,12 @@
 [tool.poetry]
-name = "prediction-worker"
+name = "prediction_ack"
 version = "1.0.0"
 description = ""
 authors = []
-packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-boto3 = "^1.34.5"
+boto3 = "^1.34.2"
 
 [build-system]
 requires = ["poetry-core"]

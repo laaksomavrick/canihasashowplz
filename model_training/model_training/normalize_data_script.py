@@ -2,7 +2,7 @@ from uuid import uuid4
 from os.path import abspath, dirname, join
 from pandas import read_csv
 
-from model.functions import normalize_show_title
+from model_training.functions import normalize_show_title
 
 
 def start():

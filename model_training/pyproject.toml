@@ -1,13 +1,16 @@
 [tool.poetry]
-name = "model-inference"
+name = "model_training"
 version = "1.0.0"
 description = ""
 authors = []
-packages = [{include = "src"}]
 
 [tool.poetry.scripts]
-push-to-ecr = "push_to_ecr:main"
-push-encoder-to-s3 = "push_encoder_to_s3:main"
+normalize-imdb-data = "model.normalize_data_script:start"
+upload-to-dynamo-staging = "model.upload_to_dynamo_staging_script:start"
+upload-to-dynamo-prod = "model.upload_to_dynamo_prod_script:start"
+train-model = "model.train_model:start"
+gzip-tar-model = "model.zip_and_tar_model:start"
+upload-model-to-s3 = "model.upload_model_to_s3:start"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -20,8 +23,7 @@ boto3 = "^1.33.11"
 community = "^1.0.0b1"
 networkx = "^3.2.1"
 matplotlib = "^3.8.2"
-flask = "^3.0.0"
-gunicorn = "^21.2.0"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry-core"]

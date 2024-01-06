@@ -2,7 +2,7 @@ import json
 import uuid
 from unittest import TestCase
 from unittest.mock import patch
-from src.app import lambda_handler
+from prediction_worker.app import lambda_handler
 
 prediction_id = str(uuid.UUID(int=0))
 the_wire_uuid = uuid.uuid4()

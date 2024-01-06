@@ -3,9 +3,9 @@ import pickle
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 
-from model.graph import generate_graph
-from model.pipelines import get_knn_graph_pipeline
-from model.functions import get_stratified_data
+from model_training.graph import generate_graph
+from model_training.pipelines import get_knn_graph_pipeline
+from model_training.functions import get_stratified_data
 from joblib import dump
 
 # rename "model" to "model-training"

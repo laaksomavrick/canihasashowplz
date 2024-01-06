@@ -10,7 +10,7 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 RUN pip install --no-cache-dir poetry==1.7.1 \
         && poetry install --no-root
 
-COPY src src
+COPY model_inference model_inference
 COPY app.py app.py
 
 ENV SM_MODEL_DIR /opt/ml/model

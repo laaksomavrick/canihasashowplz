@@ -1,7 +1,7 @@
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from model.transformers import (
+from model_training.transformers import (
     AddIsLikedAttribute,
     DropColumns,
     DropDuplicates,

@@ -1,7 +1,7 @@
 import logging
 import json
 
-from src.helpers import write_is_liked, get_prediction, save_prediction
+from prediction_worker.helpers import write_is_liked, get_prediction, save_prediction
 
 logger = logging.getLogger()
 

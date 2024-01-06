@@ -62,7 +62,7 @@ Resources:
         LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
-      DockerContext: ./lambdas/prediction-ack
+      DockerContext: ./prediction_ack
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
   PredictionAckFunctionLogGroup:
@@ -134,7 +134,7 @@ Resources:
         LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
-      DockerContext: ./lambdas/prediction-worker
+      DockerContext: ./prediction_worker
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
   PredictionWorkerFunctionFunctionLogGroup:
