@@ -19,9 +19,11 @@ from joblib import dump
 
 # Re-org this to accommodate SageMaker expected API; automate pushing to ECR similar to model-inference
 
-# Write script that we can run locally to perform sagemaker_client.create_training_job
+# Write lambda that we can run to perform sagemaker_client.create_training_job
 # see https://medium.com/@smertatli/aws-sagemaker-is-one-of-the-most-advanced-machine-learning-services-in-the-cloud-world-46ff67d45c0
-# Eventually, we can automate this on a weekly basis via Lambda + cloudwatch event
+
+# Synchronize data pull + model training into a workflow via step functions
+# Can trivially run manually or via cron later with cw events
 
 def start():
     label_encoder = LabelEncoder()

@@ -15,7 +15,13 @@ Parameters:
   WorkerTimeout:
     Type: Number
     Default: 900
+  ExportTimeout:
+    Type: Number
+    Default: 900
   ModelInferenceVersion:
+    Type: String
+    Default: latest
+  ModelDataVersion:
     Type: String
     Default: latest
 
@@ -207,6 +213,79 @@ Resources:
                     - ${TableName}/*
                     - TableName: !GetAtt PredictionTable.Arn
 
+  RatingsExportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt RatingsExportRole.Arn
+      Environment:
+        Variables:
+          DESTINATION_BUCKET_NAME: !Ref RatingsExportBucket
+          RATING_TABLE_NAME: !Ref RatingTable
+          RATING_FILE_NAME: !Sub ratings-${ModelDataVersion}.csv
+      Timeout: !Ref ExportTimeout
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./ratings_exporter
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  RatingsExportFunctionFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${RatingsExportFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  RatingsExportRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-RatingsExportBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                  - "s3:PutObject"
+                Resource:
+                  - !GetAtt RatingsExportBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt RatingsExportBucket.Arn
+
+        - PolicyName: !Sub ${AWS::StackName}-RatingsExportData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - !GetAtt RatingTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt RatingTable.Arn
+
   PredictionRequestQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -295,6 +374,11 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub ${AWS::StackName}-modelbucket
+
+  RatingsExportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-ratingsexport
 
   SageMakerExecutionRole:
     Type: AWS::IAM::Role

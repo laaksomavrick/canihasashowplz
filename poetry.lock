@@ -2540,6 +2540,23 @@ packaging = "*"
 test = ["pytest (>=6,!=7.0.0,!=7.0.1)", "pytest-cov (>=3.0.0)", "pytest-qt"]
 
 [[package]]
+name = "ratings-exporter"
+version = "1.0.0"
+description = ""
+optional = false
+python-versions = "^3.11"
+files = []
+develop = true
+
+[package.dependencies]
+boto3 = "^1.34.2"
+botocore = "^1.34.14"
+
+[package.source]
+type = "directory"
+url = "ratings_exporter"
+
+[[package]]
 name = "referencing"
 version = "0.32.1"
 description = "JSON Referencing + Python"
@@ -3104,4 +3121,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e70072cd93d69d504f089244beb68d396dc26e175dbd19509250aea220025aa8"
+content-hash = "d1aea07ac378c0d209baabf4afe154bcf97017ee74d47fa0b8a93e392cd1da35"

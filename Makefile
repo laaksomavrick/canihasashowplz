@@ -1,8 +1,9 @@
 MODEL_INFERENCE_VERSION := $(shell cat model_inference/version)
+MODEL_DATA_VERSION := $(shell cat model_training/data_version)
 
 .PHONY: build-staging
 build-staging:
-	@sam build --cached --skip-pull-image --build-in-source --parallel -t template.yaml --config-env staging --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION)
+	@sam build --cached --skip-pull-image --build-in-source --parallel -t template.yaml --config-env staging --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION)
 
 .PHONY: build-prod
 build-prod:
@@ -10,7 +11,7 @@ build-prod:
 
 .PHONY: deploy-staging
 deploy-staging:
-	@sam deploy --config-env staging --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION)
+	@sam deploy --config-env staging --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION)
 
 .PHONY: deploy-prod
 deploy-prod:

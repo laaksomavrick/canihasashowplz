@@ -247,3 +247,4 @@ $RECYCLE.BIN/
 model_training/graph.pkl
 model_inference/label_encoder.pkl
 model_training/model_training/graph.tar.gz
+scratch.py
