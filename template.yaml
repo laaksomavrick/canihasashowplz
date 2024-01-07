@@ -24,6 +24,9 @@ Parameters:
   ModelDataVersion:
     Type: String
     Default: latest
+  ModelTrainingVersion:
+    Type: String
+    Default: latest
 
 Globals:
   Function:
@@ -351,15 +354,21 @@ Resources:
       RepositoryName: !Sub ${AWS::StackName}/modelinferencerepo
       RepositoryPolicyText:
         Version: "2012-10-17"
-#        Statement:
-#          - Sid: AllowSageMakerAccess
-#            Effect: Allow
-#            Principal:
-#              Service: "sagemaker.amazonaws.com"
-#            Action:
-#              - "ecr:BatchCheckLayerAvailability"
-#              - "ecr:GetDownloadUrlForLayer"
-#              - "ecr:BatchGetImage"
+        Statement:
+          - Sid: AllowSageMakerAccess
+            Effect: Allow
+            Principal:
+              Service: "sagemaker.amazonaws.com"
+            Action:
+              - "ecr:*"
+              - "sagemaker:*"
+
+  ModelTrainingRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}/modeltrainingrepo
+      RepositoryPolicyText:
+        Version: "2012-10-17"
         Statement:
           - Sid: AllowSageMakerAccess
             Effect: Allow
@@ -453,7 +462,10 @@ Resources:
                   - ${RepositoryUri}:${ModelInferenceVersion}
                   - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
                     ModelInferenceVersion: !Ref ModelInferenceVersion
-        ModelDataUrl: !Sub s3://${ModelBucket}/graph.tar.gz
+        ModelDataUrl: !Sub s3://${ModelBucket}/graph-${ModelTrainingVersion}.tar.gz
+        Environment:
+          MODEL_BUCKET_NAME: !Ref ModelBucket
+          LABEL_ENCODER_FILE_NAME: !Sub label_encoder-${ModelTrainingVersion}.pkl
 
   SageMakerEndpoint:
     Type: AWS::SageMaker::Endpoint

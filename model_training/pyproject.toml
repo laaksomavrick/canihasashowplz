@@ -5,12 +5,7 @@ description = ""
 authors = []
 
 [tool.poetry.scripts]
-normalize-imdb-data = "model_training.normalize_data_script:start"
-upload-to-dynamo-staging = "model_training.upload_to_dynamo_staging_script:start"
-upload-to-dynamo-prod = "model_training.upload_to_dynamo_prod_script:start"
-train-model = "model_training.train_model:start"
-gzip-tar-model = "model_training.zip_and_tar_model:start"
-upload-model-to-s3 = "model_training.upload_model_to_s3:start"
+push-to-ecr = "push_to_ecr:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -24,6 +19,7 @@ community = "^1.0.0b1"
 networkx = "^3.2.1"
 matplotlib = "^3.8.2"
 jupyter = "^1.0.0"
+s3fs = "^2023.12.2"
 
 [build-system]
 requires = ["poetry-core"]

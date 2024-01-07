@@ -13,13 +13,14 @@ logger.addHandler(logging.StreamHandler())
 
 LABEL_ENCODER = None
 
+MODEL_BUCKET_NAME = os.getenv("MODEL_BUCKET_NAME")
+LABEL_ENCODER_FILE_NAME = os.getenv("LABEL_ENCODER_FILE_NAME")
+
 
 def get_label_encoder_from_s3():
-    bucket_name = "canihaveatvshowplz-staging-modelbucket"
-    object_name = "label_encoder.pkl"
     s3 = boto3.client("s3")
 
-    response = s3.get_object(Bucket=bucket_name, Key=object_name)
+    response = s3.get_object(Bucket=MODEL_BUCKET_NAME, Key=LABEL_ENCODER_FILE_NAME)
 
     content = response["Body"].read()
 
