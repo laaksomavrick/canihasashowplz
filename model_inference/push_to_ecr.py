@@ -27,7 +27,7 @@ def build_docker_image(image_name, dockerfile_path):
 
 
 def push_to_ecr(image_name, repository_uri):
-    version = "1.0.6"
+    version = "1"
     ecr_client = boto3.client("ecr")
     try:
         token = ecr_client.get_authorization_token()

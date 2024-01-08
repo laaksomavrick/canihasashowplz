@@ -1,51 +1,35 @@
-import io
 import os
 import pickle
 
-import boto3
 import logging
-import joblib
 
 # TODO: improve logging in cw logs
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
-LABEL_ENCODER = None
-
-MODEL_BUCKET_NAME = os.getenv("MODEL_BUCKET_NAME")
-LABEL_ENCODER_FILE_NAME = os.getenv("LABEL_ENCODER_FILE_NAME")
-
-
-def get_label_encoder_from_s3():
-    s3 = boto3.client("s3")
-
-    response = s3.get_object(Bucket=MODEL_BUCKET_NAME, Key=LABEL_ENCODER_FILE_NAME)
-
-    content = response["Body"].read()
-
-    label_encoder_file = io.BytesIO(content)
-
-    loaded_data = joblib.load(label_encoder_file)
-    return loaded_data
-
-
-def get_label_encoder():
-    global LABEL_ENCODER
-    if LABEL_ENCODER is None:
-        LABEL_ENCODER = get_label_encoder_from_s3()
-
-    return LABEL_ENCODER
+STACK_NAME = os.getenv("STACK_NAME")
+MODEL_TRAINING_VERSION = os.getenv("MODEL_TRAINING_VERSION")
+MODEL_DATA_VERSION = os.getenv("MODEL_DATA_VERSION")
+MODEL_INFERENCE_VERSION = os.getenv("MODEL_INFERENCE_VERSION")
 
 
 def load_model(model_dir):
-    # TODO: update to accommodate retrieving from
-    # s3://canihaveatvshowplz-staging-modelbucket/canihaveatvshowplz-2024-01-07-21-17-56/output/model.tar.gz
-    # CAN DO LABEL_ENCODER AS WELL
-    graph_path = os.path.join(model_dir, "graph.pkl")
+    logger.info(f"Loading model with training_version={MODEL_TRAINING_VERSION} and data_version={MODEL_DATA_VERSION}")
+
+    # training_job_name = f"{STACK_NAME}_model-{MODEL_TRAINING_VERSION}_data-{MODEL_DATA_VERSION}"
+    # output_path = os.path.join(model_dir, training_job_name, "output")
+    # logger.info(f"Path to look is {output_path}")
+
+    graph_path = os.path.join(model_dir, f"graph-{MODEL_TRAINING_VERSION}.pkl")
+    encoder_path = os.path.join(model_dir, f"label_encoder-{MODEL_TRAINING_VERSION}.pkl")
     with open(graph_path, "rb") as f:
-        loaded_graph = pickle.load(f)
-        return loaded_graph
+        graph = pickle.load(f)
+
+    with open(encoder_path, "rb") as f:
+        encoder = pickle.load(f)
+
+    return { "graph": graph, "encoder": encoder }
 
 
 def get_encoded_show_ids(show_ids=[], label_encoder=None, logger=None):
@@ -64,17 +48,17 @@ def get_encoded_show_ids(show_ids=[], label_encoder=None, logger=None):
 
 def predict(body, model):
     top_n = 5
-    logger.info("Making a prediction")
+    logger.info(f"Making a prediction with model_inference_version={MODEL_INFERENCE_VERSION}")
     logger.info(body)
 
     show_ids = body["show_ids"]
 
-    if model is None:
-        raise "Model must be set"
     if len(show_ids) == 0:
         return []
 
-    label_encoder = get_label_encoder()
+    graph = model["graph"]
+    label_encoder = model["encoder"]
+
     show_ids = get_encoded_show_ids(
         show_ids=show_ids, label_encoder=label_encoder, logger=logger
     )
@@ -82,8 +66,8 @@ def predict(body, model):
     similar_shows = {}
 
     for show_id in show_ids:
-        if show_id in model:
-            neighbors = list(model.neighbors(show_id))
+        if show_id in graph:
+            neighbors = list(graph.neighbors(show_id))
 
             for neighbor in neighbors:
                 if neighbor != show_id:

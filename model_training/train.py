@@ -18,25 +18,14 @@ data_path = os.path.join(prefix, "input/data/train/")
 ratings_file_path = os.path.join(data_path, RATING_FILE_NAME)
 model_path = os.path.join(prefix, "model")
 
-
-# In a docker container made for sagemaker training:
-# Update get_stratified_data to pull data from S3 via an ENV variable we'll later inject in cfn
-# Run pipeline steps
-# Save model and binary encoder to S3 with a tag that can relate data to the model and relate training code to the model
-# e.g. tvshowgraph-$trainingsetid-$modelcodeidshipping
-# Re-org this to accommodate SageMaker expected API; automate pushing to ECR similar to model-inference
-
-# TODO: Write lambda that we can run to perform sagemaker_client.create_training_job via this container
-# see https://medium.com/@smertatli/aws-sagemaker-is-one-of-the-most-advanced-machine-learning-services-in-the-cloud-world-46ff67d45c0
+# TODO: Update CI for model_training ecr and sam params
 
 # TODO: Document responsibilities in README of each re: inputs, outputs
 # TODO: Create diagrams of 1) app system and 2) model training system
 
-# TODO: Update CI for model_training ecr and sam params
-
 # TODO: Synchronize data pull + model training into a workflow via step functions
-
-# TODO: Write script that calls step function
+# TODO: Write script that calls step function in AWS for env (stage, prod)
+# TODO: separate model training and model serving into separate stacks, document need to run training prior to running serving
 
 # TODO: test in staging. If that works, deploy to prod and try that too.
 

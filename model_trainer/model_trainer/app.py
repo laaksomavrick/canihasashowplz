@@ -1,42 +1,28 @@
 import logging
 import os
-import time
 
 import boto3
 
 logger = logging.getLogger()
 
-# RATING_BUCKET_NAME = os.getenv("RATING_BUCKET_NAME")
-# RATING_FILE_NAME = os.getenv("RATING_FILE_NAME")
-#
-# MODEL_BUCKET_NAME = os.getenv("MODEL_BUCKET_NAME")
-#
-# STACK_NAME = os.getenv("STACK_NAME")
-# MODEL_TRAINING_VERSION = os.getenv("MODEL_TRAINING_VERSION")
-# MODEL_DATA_VERSION = os.getenv("MODEL_DATA_VERSION")
-#
-# MODEL_TRAINING_ECR_URL = os.getenv("MODEL_TRAINING_ECR_URL")
-# SAGEMAKER_ROLE = os.getenv("SAGEMAKER_ROLE")
+RATING_BUCKET_NAME = os.getenv("RATING_BUCKET_NAME")
+RATING_FILE_NAME = os.getenv("RATING_FILE_NAME")
 
-RATING_BUCKET_NAME = 'canihaveatvshowplz-staging-ratingsexport'
-RATING_FILE_NAME = 'ratings-1.0.0.csv'
+MODEL_BUCKET_NAME = os.getenv("MODEL_BUCKET_NAME")
 
-MODEL_BUCKET_NAME = 'canihaveatvshowplz-staging-modelbucket'
+STACK_NAME = os.getenv("STACK_NAME")
+MODEL_TRAINING_VERSION = os.getenv("MODEL_TRAINING_VERSION")
+MODEL_DATA_VERSION = os.getenv("MODEL_DATA_VERSION")
 
-STACK_NAME = 'canihaveatvshowplz'
-MODEL_TRAINING_VERSION = '1.0.0'
-
-MODEL_TRAINING_ECR_URL = '844544735981.dkr.ecr.ca-central-1.amazonaws.com/canihaveatvshowplz-staging/modeltrainingrepo:1.0.0'
-SAGEMAKER_ROLE = 'arn:aws:iam::844544735981:role/canihaveatvshowplz-staging-SageMakerExecutionRole-nVy1TkCYuyEP'
+MODEL_TRAINING_ECR_URL = os.getenv("MODEL_TRAINING_ECR_URL")
+SAGEMAKER_ROLE = os.getenv("SAGEMAKER_ROLE")
 
 def lambda_handler(event, context):
-    # logger.info(f"Requesting model training job", extra={"bucket": DESTINATION_BUCKET_NAME, "table": RATING_TABLE_NAME, "key": RATING_FILE_NAME})
+    logger.info(f"Requesting model training job")
 
     sagemaker = boto3.client("sagemaker")
 
-    # TODO: want a more deterministic way of setting this
-    # e.g., from version file indicating a "run-id"?
-    training_job_name = f"{STACK_NAME}-{time.strftime('%Y-%m-%d-%H-%M-%S')}"
+    training_job_name = f"{STACK_NAME}-model-{MODEL_TRAINING_VERSION}-data-{MODEL_DATA_VERSION}"
 
     environment_variables = {
         'RATING_BUCKET_NAME': RATING_BUCKET_NAME,
@@ -83,5 +69,5 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': 'Data exported to S3 successfully'
+        'body': 'Successfully requested model training job'
     }
