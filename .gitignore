@@ -244,6 +244,7 @@ $RECYCLE.BIN/
 
 .aws-sam
 
-model/graph.pkl
-model-inference/label_encoder.pkl
-model/model/graph.tar.gz
+model_training/graph.pkl
+model_inference/label_encoder.pkl
+model_training/model_training/graph.tar.gz
+scratch.py

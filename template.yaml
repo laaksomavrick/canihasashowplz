@@ -15,7 +15,16 @@ Parameters:
   WorkerTimeout:
     Type: Number
     Default: 900
+  ExportTimeout:
+    Type: Number
+    Default: 900
   ModelInferenceVersion:
+    Type: String
+    Default: latest
+  ModelDataVersion:
+    Type: String
+    Default: latest
+  ModelTrainingVersion:
     Type: String
     Default: latest
 
@@ -32,6 +41,8 @@ Globals:
 Conditions:
   IsProd: !Equals [!Ref Environment, "prod"]
   IsStaging: !Equals [!Ref Environment, "staging"]
+
+# TODO: review IAM policies to reduce permissions scope to only what is required
 
 Resources:
   ApiGateway:
@@ -62,7 +73,7 @@ Resources:
         LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
-      DockerContext: ./lambdas/prediction-ack
+      DockerContext: ./prediction_ack
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
   PredictionAckFunctionLogGroup:
@@ -134,7 +145,7 @@ Resources:
         LogFormat: JSON
     Metadata:
       Dockerfile: ./Dockerfile
-      DockerContext: ./lambdas/prediction-worker
+      DockerContext: ./prediction_worker
       DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
 
   PredictionWorkerFunctionFunctionLogGroup:
@@ -207,6 +218,173 @@ Resources:
                     - ${TableName}/*
                     - TableName: !GetAtt PredictionTable.Arn
 
+  RatingsExportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt RatingsExportRole.Arn
+      Environment:
+        Variables:
+          DESTINATION_BUCKET_NAME: !Ref RatingsExportBucket
+          RATING_TABLE_NAME: !Ref RatingTable
+          RATING_FILE_NAME: !Sub ratings-${ModelDataVersion}.csv
+      Timeout: !Ref ExportTimeout
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./ratings_exporter
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  RatingsExportFunctionFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${RatingsExportFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  RatingsExportRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-RatingsExportBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                  - "s3:PutObject"
+                Resource:
+                  - !GetAtt RatingsExportBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt RatingsExportBucket.Arn
+
+        - PolicyName: !Sub ${AWS::StackName}-RatingsExportData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - !GetAtt RatingTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt RatingTable.Arn
+
+  ModelTrainerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt ModelTrainerRole.Arn
+      Environment:
+        Variables:
+          RATING_BUCKET_NAME: !Ref RatingsExportBucket
+          RATING_FILE_NAME: !Sub ratings-${ModelDataVersion}.csv
+          MODEL_BUCKET_NAME: !Ref ModelBucket
+          STACK_NAME: !Sub ${AWS::StackName}
+          MODEL_TRAINING_VERSION: !Ref ModelTrainingVersion
+          MODEL_DATA_VERSION: !Ref ModelDataVersion
+          MODEL_TRAINING_ECR_URL: !Sub
+                                    - ${RepositoryUri}:${ModelTrainingVersion}
+                                    - RepositoryUri: !GetAtt ModelTrainingRepository.RepositoryUri
+                                      ModelTrainingVersion: !Ref ModelTrainingVersion
+          SAGEMAKER_ROLE: !GetAtt SageMakerExecutionRole.Arn
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./model_trainer
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  ModelTrainerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${ModelTrainerFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  ModelTrainerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-ModelTrainerRatingsExportBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                Resource:
+                  - !GetAtt RatingsExportBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt RatingsExportBucket.Arn
+        - PolicyName: !Sub ${AWS::StackName}-ModelTrainerModelBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "s3:GetObject"
+                  - "s3:ListBucket"
+                  - "s3:PutObject"
+                Resource:
+                  - !GetAtt ModelBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt ModelBucket.Arn
+        - PolicyName: !Sub ${AWS::StackName}-ModelTrainerSagemaker
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "sagemaker:*"
+                Resource:
+                  - '*'
+        - PolicyName: !Sub ${AWS::StackName}-ModelTrainerIam
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "iam:PassRole"
+                Resource:
+                  - !GetAtt SageMakerExecutionRole.Arn
+
+
   PredictionRequestQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -272,15 +450,21 @@ Resources:
       RepositoryName: !Sub ${AWS::StackName}/modelinferencerepo
       RepositoryPolicyText:
         Version: "2012-10-17"
-#        Statement:
-#          - Sid: AllowSageMakerAccess
-#            Effect: Allow
-#            Principal:
-#              Service: "sagemaker.amazonaws.com"
-#            Action:
-#              - "ecr:BatchCheckLayerAvailability"
-#              - "ecr:GetDownloadUrlForLayer"
-#              - "ecr:BatchGetImage"
+        Statement:
+          - Sid: AllowSageMakerAccess
+            Effect: Allow
+            Principal:
+              Service: "sagemaker.amazonaws.com"
+            Action:
+              - "ecr:*"
+              - "sagemaker:*"
+
+  ModelTrainingRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}/modeltrainingrepo
+      RepositoryPolicyText:
+        Version: "2012-10-17"
         Statement:
           - Sid: AllowSageMakerAccess
             Effect: Allow
@@ -295,6 +479,11 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub ${AWS::StackName}-modelbucket
+
+  RatingsExportBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-ratingsexport
 
   SageMakerExecutionRole:
     Type: AWS::IAM::Role
@@ -315,11 +504,16 @@ Resources:
                 Action:
                   - "s3:GetObject"
                   - "s3:ListBucket"
+                  - "s3:PutObject"
                 Resource:
                   - !GetAtt ModelBucket.Arn
                   - !Sub
                     - ${BucketArn}/*
                     - BucketArn: !GetAtt ModelBucket.Arn
+                  - !GetAtt RatingsExportBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt RatingsExportBucket.Arn
         - PolicyName: "ECRAccessPolicy"
           PolicyDocument:
             Version: "2012-10-17"
@@ -332,6 +526,7 @@ Resources:
                   - "ecr:ListImages"
                 Resource:
                   - !GetAtt ModelInferenceRepository.Arn
+                  - !GetAtt ModelTrainingRepository.Arn
         - PolicyName: "CloudwatchAccess"
           PolicyDocument:
             Version: "2012-10-17"
@@ -360,6 +555,8 @@ Resources:
                 Action: "ecr:*"
                 Resource: "*"
 
+# TODO: custom resource that checks if model training occurred prior to provisioning model (and kicks off training if not)
+# OR: separate stacks for model training versus app?
   SageMakerModel:
     Type: AWS::SageMaker::Model
     Properties:
@@ -369,7 +566,12 @@ Resources:
                   - ${RepositoryUri}:${ModelInferenceVersion}
                   - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
                     ModelInferenceVersion: !Ref ModelInferenceVersion
-        ModelDataUrl: !Sub s3://${ModelBucket}/graph.tar.gz
+        ModelDataUrl: !Sub s3://${ModelBucket}/${AWS::StackName}-model-${ModelTrainingVersion}-data-${ModelDataVersion}/output/model.tar.gz
+        Environment:
+          STACK_NAME: !Sub ${AWS::StackName}
+          MODEL_TRAINING_VERSION: !Ref ModelTrainingVersion
+          MODEL_DATA_VERSION: !Ref ModelDataVersion
+          MODEL_INFERENCE_VERSION: !Ref ModelInferenceVersion
 
   SageMakerEndpoint:
     Type: AWS::SageMaker::Endpoint

@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
      - 'lambdas/**'
-     - 'model-inference/**'
+     - 'model_inference/**'
      - 'template.yaml'
 
 env:
@@ -28,7 +28,7 @@ jobs:
         with:
           filters: |
             changed:
-              - 'model-inference/version'
+              - 'model_inference/version'
 
   upload-model-inference-image:
     name: Upload model inference image to ECR
@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set DOCKER_IMAGE_TAG environment variable
-        run: echo "DOCKER_IMAGE_TAG=$(cat model-inference/version)" >> $GITHUB_ENV
+        run: echo "DOCKER_IMAGE_TAG=$(cat model_inference/version)" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -67,7 +67,7 @@ jobs:
       - name: Build and push container image
         uses: docker/build-push-action@v5
         with:
-          context: model-inference
+          context: model_inference
           platforms: linux/amd64
           tags: ${{ env.DOCKER_REPO_URL }}:${{ env.DOCKER_IMAGE_TAG }}
           push: true
@@ -90,7 +90,7 @@ jobs:
           role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
           aws-region: ${{ vars.AWS_REGION }}
       - name: Set DOCKER_IMAGE_TAG environment variable
-        run: echo "DOCKER_IMAGE_TAG=$(cat model-inference/version)" >> $GITHUB_ENV
+        run: echo "DOCKER_IMAGE_TAG=$(cat model_inference/version)" >> $GITHUB_ENV
       - name: Build SAM template
         run: sam build -t template.yaml --config-env prod --parameter-overrides ModelInferenceVersion=${{ env.DOCKER_IMAGE_TAG }}
       - name: Deploy SAM template changes
