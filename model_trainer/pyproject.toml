@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "prediction_ack"
+name = "model_trainer"
 version = "1.0.0"
 description = ""
 authors = []
@@ -7,7 +7,6 @@ authors = []
 [tool.poetry.dependencies]
 python = "^3.11"
 boto3 = "*"
-
 
 [build-system]
 requires = ["poetry-core"]

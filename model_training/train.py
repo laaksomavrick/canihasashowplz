@@ -1,17 +1,23 @@
 import os
 import pickle
 
+import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 
-from model_training.data import get_ratings_data, stratify_ratings_data
+from model_training.data import stratify_ratings_data
 from model_training.graph import generate_graph
 from model_training.pipelines import get_knn_graph_pipeline
 
 RATING_BUCKET_NAME = os.getenv("RATING_BUCKET_NAME")
 RATING_FILE_NAME = os.getenv("RATING_FILE_NAME")
-MODEL_BUCKET_NAME = os.getenv("MODEL_BUCKET_NAME")
 MODEL_TRAINING_VERSION = os.getenv("MODEL_TRAINING_VERSION")
+
+prefix = "/opt/ml"
+data_path = os.path.join(prefix, "input/data/train/")
+ratings_file_path = os.path.join(data_path, RATING_FILE_NAME)
+model_path = os.path.join(prefix, "model")
+
 
 # In a docker container made for sagemaker training:
 # Update get_stratified_data to pull data from S3 via an ENV variable we'll later inject in cfn
@@ -26,16 +32,18 @@ MODEL_TRAINING_VERSION = os.getenv("MODEL_TRAINING_VERSION")
 # TODO: Document responsibilities in README of each re: inputs, outputs
 # TODO: Create diagrams of 1) app system and 2) model training system
 
-# TODO: Update CI
+# TODO: Update CI for model_training ecr and sam params
 
 # TODO: Synchronize data pull + model training into a workflow via step functions
+
+# TODO: Write script that calls step function
 
 # TODO: test in staging. If that works, deploy to prod and try that too.
 
 def main():
     label_encoder = LabelEncoder()
 
-    ratings_df = get_ratings_data(RATING_BUCKET_NAME, RATING_FILE_NAME)
+    ratings_df = pd.read_csv(ratings_file_path)
     train_set, test_set = stratify_ratings_data(ratings_df)
 
     pipeline = get_knn_graph_pipeline(label_encoder=label_encoder)
@@ -48,14 +56,14 @@ def main():
 
     graph = generate_graph(model, df)
 
-    graph_filename = f"./graph-{MODEL_TRAINING_VERSION}.pkl"
-    encoder_filename = f'./label_encoder-{MODEL_TRAINING_VERSION}.pkl'
+    graph_filename = f"graph-{MODEL_TRAINING_VERSION}.pkl"
+    encoder_filename = f"label_encoder-{MODEL_TRAINING_VERSION}.pkl"
 
-    with open(graph_filename, "wb") as f:
-        pickle.dump(graph, f)
+    with open(os.path.join(model_path, graph_filename), 'wb') as handle:
+        pickle.dump(graph, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open(encoder_filename, "wb") as f:
-        pickle.dump(label_encoder, f)
+    with open(os.path.join(model_path, encoder_filename), 'wb') as handle:
+        pickle.dump(label_encoder, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":

@@ -39,6 +39,9 @@ def get_label_encoder():
 
 
 def load_model(model_dir):
+    # TODO: update to accommodate retrieving from
+    # s3://canihaveatvshowplz-staging-modelbucket/canihaveatvshowplz-2024-01-07-21-17-56/output/model.tar.gz
+    # CAN DO LABEL_ENCODER AS WELL
     graph_path = os.path.join(model_dir, "graph.pkl")
     with open(graph_path, "rb") as f:
         loaded_graph = pickle.load(f)

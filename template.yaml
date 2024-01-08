@@ -408,11 +408,16 @@ Resources:
                 Action:
                   - "s3:GetObject"
                   - "s3:ListBucket"
+                  - "s3:PutObject"
                 Resource:
                   - !GetAtt ModelBucket.Arn
                   - !Sub
                     - ${BucketArn}/*
                     - BucketArn: !GetAtt ModelBucket.Arn
+                  - !GetAtt RatingsExportBucket.Arn
+                  - !Sub
+                    - ${BucketArn}/*
+                    - BucketArn: !GetAtt RatingsExportBucket.Arn
         - PolicyName: "ECRAccessPolicy"
           PolicyDocument:
             Version: "2012-10-17"
@@ -425,6 +430,7 @@ Resources:
                   - "ecr:ListImages"
                 Resource:
                   - !GetAtt ModelInferenceRepository.Arn
+                  - !GetAtt ModelTrainingRepository.Arn
         - PolicyName: "CloudwatchAccess"
           PolicyDocument:
             Version: "2012-10-17"
