@@ -5,8 +5,9 @@ from model_training.transformers import (
     DropDuplicates,
     PivotShowIds,
     ShowUserEncoder,
-    IsLikedTransformer
+    IsLikedTransformer,
 )
+
 
 def get_knn_graph_pipeline(**kwargs):
     show_user_encoder = ShowUserEncoder(encoder=kwargs["label_encoder"])

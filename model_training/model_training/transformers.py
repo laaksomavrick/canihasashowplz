@@ -4,7 +4,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 
 class IsLikedTransformer(TransformerMixin, BaseEstimator):
     def __init__(self):
-        self.columns = ['IsLiked']
+        self.columns = ["IsLiked"]
 
     def fit(self, X, y=None):
         return self
@@ -13,9 +13,12 @@ class IsLikedTransformer(TransformerMixin, BaseEstimator):
         X_copy = X.copy()
 
         for col in self.columns:
-            X_copy[col] = X_copy[col].map({'True': True, 'False': False}).fillna(X_copy[col])
+            X_copy[col] = (
+                X_copy[col].map({"True": True, "False": False}).fillna(X_copy[col])
+            )
 
         return X_copy
+
 
 class ShowUserEncoder(BaseEstimator, TransformerMixin):
     def __init__(self, encoder=LabelEncoder()):

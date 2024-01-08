@@ -15,21 +15,25 @@ MODEL_INFERENCE_VERSION = os.getenv("MODEL_INFERENCE_VERSION")
 
 
 def load_model(model_dir):
-    logger.info(f"Loading model with training_version={MODEL_TRAINING_VERSION} and data_version={MODEL_DATA_VERSION}")
+    logger.info(
+        f"Loading model with training_version={MODEL_TRAINING_VERSION} and data_version={MODEL_DATA_VERSION}"
+    )
 
     # training_job_name = f"{STACK_NAME}_model-{MODEL_TRAINING_VERSION}_data-{MODEL_DATA_VERSION}"
     # output_path = os.path.join(model_dir, training_job_name, "output")
     # logger.info(f"Path to look is {output_path}")
 
     graph_path = os.path.join(model_dir, f"graph-{MODEL_TRAINING_VERSION}.pkl")
-    encoder_path = os.path.join(model_dir, f"label_encoder-{MODEL_TRAINING_VERSION}.pkl")
+    encoder_path = os.path.join(
+        model_dir, f"label_encoder-{MODEL_TRAINING_VERSION}.pkl"
+    )
     with open(graph_path, "rb") as f:
         graph = pickle.load(f)
 
     with open(encoder_path, "rb") as f:
         encoder = pickle.load(f)
 
-    return { "graph": graph, "encoder": encoder }
+    return {"graph": graph, "encoder": encoder}
 
 
 def get_encoded_show_ids(show_ids=[], label_encoder=None, logger=None):
@@ -48,7 +52,9 @@ def get_encoded_show_ids(show_ids=[], label_encoder=None, logger=None):
 
 def predict(body, model):
     top_n = 5
-    logger.info(f"Making a prediction with model_inference_version={MODEL_INFERENCE_VERSION}")
+    logger.info(
+        f"Making a prediction with model_inference_version={MODEL_INFERENCE_VERSION}"
+    )
     logger.info(body)
 
     show_ids = body["show_ids"]

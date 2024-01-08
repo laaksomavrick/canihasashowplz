@@ -27,8 +27,10 @@ def build_docker_image(image_name, dockerfile_path):
 
 
 def push_to_ecr(image_name, repository_uri):
-    training_version_file_path = 'training_version'  # Replace this with the path to your file
-    with open(training_version_file_path, 'r') as file:
+    training_version_file_path = (
+        "training_version"  # Replace this with the path to your file
+    )
+    with open(training_version_file_path, "r") as file:
         version = file.read()
 
     ecr_client = boto3.client("ecr")

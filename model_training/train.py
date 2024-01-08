@@ -25,9 +25,11 @@ model_path = os.path.join(prefix, "model")
 
 # TODO: Synchronize data pull + model training into a workflow via step functions
 # TODO: Write script that calls step function in AWS for env (stage, prod)
+
 # TODO: separate model training and model serving into separate stacks, document need to run training prior to running serving
 
 # TODO: test in staging. If that works, deploy to prod and try that too.
+
 
 def main():
     label_encoder = LabelEncoder()
@@ -48,10 +50,10 @@ def main():
     graph_filename = f"graph-{MODEL_TRAINING_VERSION}.pkl"
     encoder_filename = f"label_encoder-{MODEL_TRAINING_VERSION}.pkl"
 
-    with open(os.path.join(model_path, graph_filename), 'wb') as handle:
+    with open(os.path.join(model_path, graph_filename), "wb") as handle:
         pickle.dump(graph, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open(os.path.join(model_path, encoder_filename), 'wb') as handle:
+    with open(os.path.join(model_path, encoder_filename), "wb") as handle:
         pickle.dump(label_encoder, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
