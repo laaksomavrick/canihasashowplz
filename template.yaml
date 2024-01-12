@@ -384,6 +384,53 @@ Resources:
                 Resource:
                   - !GetAtt SageMakerExecutionRole.Arn
 
+  ModelTrainingStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      RoleArn: !GetAtt ModelTrainingStateMachineRole.Arn
+      DefinitionString: !Sub
+        - |
+            {
+              "Comment": "Orchestrates data export and model training kickoff",
+              "StartAt": "InvokeRatingsExport",
+              "States": {
+                "InvokeRatingsExport": {
+                  "Type": "Task",
+                  "Resource": "${RatingsExportArn}",
+                  "Next": "InvokeModelTrainer"
+                },
+                "InvokeModelTrainer": {
+                  "Type": "Task",
+                  "Resource": "${ModelTrainerArn}",
+                  "End": true
+                }
+              }
+            }
+        - RatingsExportArn: !GetAtt RatingsExportFunction.Arn
+          ModelTrainerArn: !GetAtt ModelTrainerFunction.Arn
+
+  ModelTrainingStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: MyStateMachinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt RatingsExportFunction.Arn
+                  - !GetAtt ModelTrainerFunction.Arn
+
   PredictionRequestQueue:
     Type: AWS::SQS::Queue
     Properties:
