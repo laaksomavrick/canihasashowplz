@@ -8,7 +8,7 @@ build-staging:
 
 .PHONY: build-prod
 build-prod:
-	@sam build -t template.yaml --config-env prod
+	@sam build -t template.yaml --config-env prod --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
 
 .PHONY: deploy-staging
 deploy-staging:
@@ -16,8 +16,8 @@ deploy-staging:
 
 .PHONY: deploy-prod
 deploy-prod:
-	@sam deploy --config-env prod --resolve-image-repos
+	@sam deploy --config-env prod --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
 
 .PHONY: deploy-prod-ci
 deploy-prod-ci:
-	@sam deploy --config-env prod --no-confirm-changeset --no-fail-on-empty-changeset --resolve-image-repos
+	@sam deploy --config-env prod --no-confirm-changeset --no-fail-on-empty-changeset --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
