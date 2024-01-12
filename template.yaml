@@ -387,6 +387,7 @@ Resources:
   ModelTrainingStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
+      StateMachineName: !Sub ${AWS::StackName}-ModelTrainingStateMachine
       RoleArn: !GetAtt ModelTrainingStateMachineRole.Arn
       DefinitionString: !Sub
         - |

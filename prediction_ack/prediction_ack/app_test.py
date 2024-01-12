@@ -13,12 +13,12 @@ show_ids = [the_wire_uuid, the_sopranos_uuid]
 
 class PredictionAckTest(TestCase):
     def setUp(self):
-        self.mock_push_to_queue = patch("src.app.push_to_queue").start()
+        self.mock_push_to_queue = patch("app.push_to_queue").start()
         self.mock_get_show_ids_for_titles = patch(
             "src.app.get_show_ids_for_titles"
         ).start()
-        self.mock_logger = patch("src.app.logging.getLogger").start()
-        self.mock_uuid = patch("src.app.uuid4").start()
+        self.mock_logger = patch("app.logging.getLogger").start()
+        self.mock_uuid = patch("app.uuid4").start()
 
         self.mock_get_show_ids_for_titles.return_value = show_ids
         self.mock_uuid.return_value = empty_uuid

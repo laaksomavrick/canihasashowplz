@@ -18,14 +18,6 @@ data_path = os.path.join(prefix, "input/data/train/")
 ratings_file_path = os.path.join(data_path, RATING_FILE_NAME)
 model_path = os.path.join(prefix, "model")
 
-# TODO: Synchronize data pull + model training into a workflow via step functions
-# - ratings exporter
-# - model trainer
-
-# TODO: Update CI for model_training ecr and sam params
-
-# TODO: test in staging. If that works, deploy to prod and try that too.
-
 
 def main():
     label_encoder = LabelEncoder()

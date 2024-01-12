@@ -12,11 +12,11 @@ show_ids = [str(the_wire_uuid), str(the_sopranos_uuid)]
 
 class PredictionWorkerTest(TestCase):
     def setUp(self):
-        self.mock_write_is_liked = patch("src.app.write_is_liked").start()
-        self.mock_get_prediction = patch("src.app.get_prediction").start()
-        self.mock_save_prediction = patch("src.app.save_prediction").start()
+        self.mock_write_is_liked = patch("app.write_is_liked").start()
+        self.mock_get_prediction = patch("app.get_prediction").start()
+        self.mock_save_prediction = patch("app.save_prediction").start()
 
-        self.mock_logger = patch("src.app.logging.getLogger").start()
+        self.mock_logger = patch("app.logging.getLogger").start()
 
     def tearDown(self):
         self.mock_write_is_liked.stop()

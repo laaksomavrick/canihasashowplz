@@ -43,8 +43,8 @@ jobs:
 
       # TODO: parallelize or fix pytest to run all tests in project
       - name: Run prediction ack tests
-        run: poetry run pytest lambdas/prediction-ack
+        run: poetry run pytest prediction_ack
 
       - name: Run prediction worker tests
-        run: poetry run pytest lambdas/prediction-worker
+        run: poetry run pytest prediction_worker
 
