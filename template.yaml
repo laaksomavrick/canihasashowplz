@@ -384,7 +384,6 @@ Resources:
                 Resource:
                   - !GetAtt SageMakerExecutionRole.Arn
 
-
   PredictionRequestQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -555,8 +554,6 @@ Resources:
                 Action: "ecr:*"
                 Resource: "*"
 
-# TODO: custom resource that checks if model training occurred prior to provisioning model (and kicks off training if not)
-# OR: separate stacks for model training versus app?
   SageMakerModel:
     Type: AWS::SageMaker::Model
     Properties:

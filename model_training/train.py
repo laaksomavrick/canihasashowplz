@@ -18,15 +18,11 @@ data_path = os.path.join(prefix, "input/data/train/")
 ratings_file_path = os.path.join(data_path, RATING_FILE_NAME)
 model_path = os.path.join(prefix, "model")
 
-# TODO: Update CI for model_training ecr and sam params
-
-# TODO: Document responsibilities in README of each re: inputs, outputs
-# TODO: Create diagrams of 1) app system and 2) model training system
-
 # TODO: Synchronize data pull + model training into a workflow via step functions
-# TODO: Write script that calls step function in AWS for env (stage, prod)
+# - ratings exporter
+# - model trainer
 
-# TODO: separate model training and model serving into separate stacks, document need to run training prior to running serving
+# TODO: Update CI for model_training ecr and sam params
 
 # TODO: test in staging. If that works, deploy to prod and try that too.
 
