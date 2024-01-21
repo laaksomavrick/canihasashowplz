@@ -15,6 +15,9 @@ prediction_ack = { path = "prediction_ack", develop = true}
 [tool.poetry.group.prediction_worker.dependencies]
 prediction_worker = { path = "prediction_worker", develop = true}
 
+[tool.poetry.group.prediction_getter.dependencies]
+prediction_getter = { path = "prediction_getter", develop = true}
+
 [tool.poetry.group.model_training.dependencies]
 model_training = { path = "model_training", develop = true}
 

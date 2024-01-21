@@ -24,7 +24,7 @@ class PredictionWorkerTest(TestCase):
         self.mock_save_prediction.stop()
         self.mock_logger.stop()
 
-    def test_it_retrives_and_saves_prediction(self):
+    def test_it_retrieves_and_saves_prediction(self):
         prediction_uuid = uuid.uuid4()
         self.mock_get_prediction.return_value = [prediction_uuid]
 
