@@ -218,6 +218,79 @@ Resources:
                     - ${TableName}/*
                     - TableName: !GetAtt PredictionTable.Arn
 
+  PredictionGetterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt PredictionGetterRole.Arn
+      Environment:
+        Variables:
+          PREDICTION_TABLE_NAME: !Ref PredictionTable
+          SHOW_TABLE_NAME: !Ref ShowTable
+      Events:
+        Query:
+          Type: Api
+          Properties:
+            Path: /prediction
+            Method: GET
+            RestApiId: !Ref ApiGateway
+            RequestParameters:
+              - method.request.querystring.prediction_id:
+                  Required: true
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./prediction_getter
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  PredictionGetterFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PredictionGetterFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionGetterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+
+        - PolicyName: !Sub ${AWS::StackName}-PredictionGetterData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - !GetAtt ShowTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt ShowTable.Arn
+                  - !GetAtt PredictionTable.Arn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName: !GetAtt PredictionTable.Arn
+
+
   RatingsExportFunction:
     Type: AWS::Serverless::Function
     Properties:
