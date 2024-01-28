@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir poetry==1.7.1 \
 
 COPY prediction_ack prediction_ack
 
-CMD ["prediction_ack/app.lambda_handler"]
+CMD ["prediction_ack/prediction_ack.lambda_handler"]

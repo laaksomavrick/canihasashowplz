@@ -2,7 +2,6 @@ import json
 import uuid
 from unittest import TestCase
 from unittest.mock import patch
-from prediction_ack.app import lambda_handler
 
 empty_uuid = uuid.UUID(int=0)
 the_wire_uuid = uuid.uuid4()
@@ -10,24 +9,36 @@ the_sopranos_uuid = uuid.uuid4()
 shows = ["The Wire", "The Sopranos"]
 show_ids = [the_wire_uuid, the_sopranos_uuid]
 
+from prediction_ack.prediction_ack import lambda_handler
+
 
 class PredictionAckTest(TestCase):
     def setUp(self):
-        self.mock_push_to_queue = patch("app.push_to_queue").start()
-        self.mock_get_show_ids_for_titles = patch(
-            "src.app.get_show_ids_for_titles"
-        ).start()
-        self.mock_logger = patch("app.logging.getLogger").start()
-        self.mock_uuid = patch("app.uuid4").start()
+        self.mock_push_to_queue_patch = patch(
+            "prediction_ack.prediction_ack.push_to_queue"
+        )
+        self.mock_get_show_ids_for_titles_patch = patch(
+            "prediction_ack.prediction_ack.get_show_ids_for_titles"
+        )
+        self.mock_logger_patch = patch(
+            "prediction_ack.prediction_ack.logging.getLogger"
+        )
+        self.mock_uuid_patch = patch("prediction_ack.prediction_ack.uuid4")
+
+        self.mock_push_to_queue = self.mock_push_to_queue_patch.start()
+        self.mock_get_show_ids_for_titles = (
+            self.mock_get_show_ids_for_titles_patch.start()
+        )
+        self.mock_logger = self.mock_logger_patch.start()
+        self.mock_uuid = self.mock_uuid_patch.start()
 
         self.mock_get_show_ids_for_titles.return_value = show_ids
         self.mock_uuid.return_value = empty_uuid
 
-    def tearDown(self):
-        self.mock_push_to_queue.stop()
-        self.mock_get_show_ids_for_titles.stop()
-        self.mock_uuid.stop()
-        self.mock_logger.stop()
+        self.addCleanup(self.mock_push_to_queue_patch.stop)
+        self.addCleanup(self.mock_get_show_ids_for_titles_patch.stop)
+        self.addCleanup(self.mock_logger_patch.stop)
+        self.addCleanup(self.mock_uuid_patch.stop)
 
     def test_it_pushes_prediction_request_to_queue(self):
         event = {"body": json.dumps({"shows": shows})}
@@ -62,10 +73,10 @@ class PredictionAckTest(TestCase):
         self.assertEqual(result["statusCode"], 404)
 
     def test_it_fails_when_queue_push_error_occurs(self):
+        self.mock_push_to_queue.return_value = None
+
         event = {"body": json.dumps({"shows": shows})}
         context = {}
-
-        self.mock_push_to_queue.return_value = None
 
         result = lambda_handler(event, context)
 

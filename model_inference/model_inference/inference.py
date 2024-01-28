@@ -15,6 +15,10 @@ MODEL_INFERENCE_VERSION = os.getenv("MODEL_INFERENCE_VERSION")
 
 
 def load_model(model_dir):
+    if os.getenv("PYTHON_ENV") == "test":
+        logger.debug("Environment is test, loading none...")
+        return {"graph": None, "encoder": None}
+
     logger.info(
         f"Loading model with training_version={MODEL_TRAINING_VERSION} and data_version={MODEL_DATA_VERSION}"
     )

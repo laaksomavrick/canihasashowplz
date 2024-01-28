@@ -59,6 +59,7 @@ Resources:
       Role: !GetAtt PredictionAckRole.Arn
       Environment:
         Variables:
+          PYTHON_ENV: !Ref Environment
           PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
           SHOW_TABLE_NAME: !Ref ShowTable
       Events:
@@ -131,6 +132,7 @@ Resources:
       Role: !GetAtt PredictionWorkerRole.Arn
       Environment:
         Variables:
+          PYTHON_ENV: !Ref Environment
           PREDICTION_TABLE_NAME: !Ref PredictionTable
           RATING_TABLE_NAME: !Ref RatingTable
           PREDICTION_ENDPOINT_NAME: !GetAtt SageMakerEndpoint.EndpointName
@@ -225,6 +227,7 @@ Resources:
       Role: !GetAtt PredictionGetterRole.Arn
       Environment:
         Variables:
+          PYTHON_ENV: !Ref Environment
           PREDICTION_TABLE_NAME: !Ref PredictionTable
           SHOW_TABLE_NAME: !Ref ShowTable
       Events:
@@ -298,6 +301,7 @@ Resources:
       Role: !GetAtt RatingsExportRole.Arn
       Environment:
         Variables:
+          PYTHON_ENV: !Ref Environment
           DESTINATION_BUCKET_NAME: !Ref RatingsExportBucket
           RATING_TABLE_NAME: !Ref RatingTable
           RATING_FILE_NAME: !Sub ratings-${ModelDataVersion}.csv
@@ -371,6 +375,7 @@ Resources:
       Role: !GetAtt ModelTrainerRole.Arn
       Environment:
         Variables:
+          PYTHON_ENV: !Ref Environment
           RATING_BUCKET_NAME: !Ref RatingsExportBucket
           RATING_FILE_NAME: !Sub ratings-${ModelDataVersion}.csv
           MODEL_BUCKET_NAME: !Ref ModelBucket
