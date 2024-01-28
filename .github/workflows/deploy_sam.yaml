@@ -95,7 +95,7 @@ jobs:
           push: true
 
   upload-model-training-image:
-    name: Upload model inference image to ECR
+    name: Upload model training image to ECR
     needs: [ model-training-changes ]
     if: ${{ needs.model-training-changes.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
