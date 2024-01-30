@@ -1,0 +1,26 @@
+{
+  "name": "client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": "^20",
+    "npm": "^9"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write \"./**/*.js\"",
+    "format:check": "prettier -c \"./**/*.js\""
+  },
+  "dependencies": {
+    "vue": "^3.3.11",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.5.2",
+    "vite": "^5.0.8",
+    "prettier": "^3.2.4"
+  }
+}
