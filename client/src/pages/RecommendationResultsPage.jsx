@@ -1,5 +1,5 @@
 
-function PredictionResultsPage() {
+function RecommendationResultsPage() {
   return (
     <div>
         prediction results
@@ -7,4 +7,4 @@ function PredictionResultsPage() {
   )
 }
 
-export default PredictionResultsPage
+export default RecommendationResultsPage

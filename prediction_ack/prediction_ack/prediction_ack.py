@@ -56,4 +56,5 @@ def lambda_handler(event, context):
                 "prediction_id": prediction_id,
             }
         ),
+        "headers": {'Access-Control-Allow-Origin': '*'}
     }

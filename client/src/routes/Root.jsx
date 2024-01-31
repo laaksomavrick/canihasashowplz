@@ -1,10 +1,13 @@
 import { Outlet } from "react-router-dom";
+import { Box, Heading, Flex } from "@chakra-ui/react";
 
 export default function Root() {
   return (
-      <div>
-        <h1>canihasashowplz</h1>
-        <Outlet />
-      </div>
+      <Box w="100vw" h="100vh">
+          <Flex alignItems="center" justifyContent="center" w="100%" maxW="3xl" margin="auto" flexDir="column">
+              <Heading p="6">canihasashowplz</Heading>
+              <Outlet />
+          </Flex>
+      </Box>
   );
 }

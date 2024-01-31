@@ -1,20 +1,28 @@
 import { Flex, Text, Input, Stack, Button } from "@chakra-ui/react";
-import { useState } from "react";
 import { useForm } from 'react-hook-form';
+import usePostRecommendationRequest from "../api/usePostRecommendationRequest.js";
+import { useEffect } from "react";
 
-function MakePredictionPage() {
-    const { register, handleSubmit, errors, formState } = useForm({
+function MakeRecommendationPage() {
+    const { register, handleSubmit, formState } = useForm({
         mode: 'onChange',
     });
+
+    const { data, loading, isError, post } = usePostRecommendationRequest();
 
     const onSubmit = handleSubmit(async (data) => {
         const first = data.showOne;
         const second = data.showTwo;
         const third = data.showThree
         const shows = [first, second, third]
-
-        console.log(shows)
+        await post(shows);
     });
+
+    // TODO: error handling
+
+    useEffect(() => {
+       console.log(data)
+    }, [data])
 
     return (
         <Flex flexDir="column">
@@ -25,7 +33,7 @@ function MakePredictionPage() {
                         <Input name="showOne" id="showOne" placeholder="Show one" {...register("showOne", { required: true })} size="lg" />
                         <Input name="showTwo" id="showTwo" placeholder="Show two" {...register("showTwo", { required: true })} size="lg" />
                         <Input name="showThree" id="showThree" placeholder="Show three" {...register("showThree", { required: true })} size="lg" />
-                        <Button type="submit" colorScheme='teal' size='lg' isDisabled={formState.isValid === false} isLoading={formState.isSubmitting}>
+                        <Button type="submit" colorScheme='teal' size='lg' isDisabled={formState.isValid === false} isLoading={formState.isSubmitting || loading}>
                             Submit
                         </Button>
                     </Stack>
@@ -35,4 +43,4 @@ function MakePredictionPage() {
     );
 }
 
-export default MakePredictionPage;
+export default MakeRecommendationPage;

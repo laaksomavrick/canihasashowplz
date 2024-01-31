@@ -8,8 +8,10 @@ import {
 import Root from "./routes/Root.jsx";
 import ErrorPage from "./pages/ErrorPage";
 import ProcessingPage from "./pages/ProcessingPage.jsx";
-import PredictionResultsPage from "./pages/PredictionResultsPage.jsx";
-import MakePredictionPage from "./pages/MakePredictionPage.jsx";
+import RecommendationResultsPage from "./pages/RecommendationResultsPage.jsx";
+import MakeRecommendationPage from "./pages/MakeRecommendationPage.jsx";
+
+console.log(import.meta.env.VITE_API_BASE_URL)
 
 const router = createBrowserRouter([
     {
@@ -19,7 +21,7 @@ const router = createBrowserRouter([
         children: [
              {
                 path: "/",
-                element: <MakePredictionPage />,
+                element: <MakeRecommendationPage />,
             },
             {
                 path: "/processing",
@@ -27,7 +29,7 @@ const router = createBrowserRouter([
             },
             {
                 path: "/results",
-                element: <PredictionResultsPage />,
+                element: <RecommendationResultsPage />,
             },
         ]
     },
