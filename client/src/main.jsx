@@ -10,8 +10,7 @@ import ErrorPage from "./pages/ErrorPage";
 import ProcessingPage from "./pages/ProcessingPage.jsx";
 import RecommendationResultsPage from "./pages/RecommendationResultsPage.jsx";
 import MakeRecommendationPage from "./pages/MakeRecommendationPage.jsx";
-
-console.log(import.meta.env.VITE_API_BASE_URL)
+import { PredictionContextProvider } from "./contexts/PredictionContext.jsx";
 
 const router = createBrowserRouter([
     {
@@ -40,7 +39,9 @@ const rootElement = document.getElementById("root");
 ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
         <ChakraProvider>
-            <RouterProvider router={router} />
+            <PredictionContextProvider>
+                <RouterProvider router={router} />
+            </PredictionContextProvider>
         </ChakraProvider>
     </React.StrictMode>,
 );
