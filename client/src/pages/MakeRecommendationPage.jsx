@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 
 function MakeRecommendationPage() {
-    const [, setPredictionId] = usePredictionContext();
+    const { setPredictionId } = usePredictionContext();
     const { register, handleSubmit, formState } = useForm({
         mode: 'onChange',
     });

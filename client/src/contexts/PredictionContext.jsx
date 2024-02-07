@@ -4,8 +4,16 @@ const PredictionContext = createContext([null, () => {}])
 
 export const PredictionContextProvider = ({ children }) => {
     const [predictionId, setPredictionId] = useState(null);
+    const [shows, setShows] = useState([])
 
-    return <PredictionContext.Provider value={[predictionId, setPredictionId]}>{children}</PredictionContext.Provider>
+    const value = {
+        predictionId,
+        shows,
+        setPredictionId,
+        setShows
+    }
+
+    return <PredictionContext.Provider value={value}>{children}</PredictionContext.Provider>
 }
 
 export const usePredictionContext = () => useContext(PredictionContext);
