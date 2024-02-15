@@ -4,6 +4,8 @@ import useInterval from "../hooks/useInterval.js";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flex, Spinner } from "@chakra-ui/react";
+import { Navigate } from "react-router-dom";
+
 
 function ProcessingPage() {
     const navigate = useNavigate();
@@ -12,14 +14,14 @@ function ProcessingPage() {
 
 
     if (predictionId == null) {
-        // TODO: redirect back to make recommendation page
+        return <Navigate to='/'></Navigate>
     }
 
-    useInterval(() => {
+    useInterval(async () => {
         if (data) {
             return;
         }
-        get(predictionId);
+        await get(predictionId);
     }, 10000, false, [data]);
 
     useEffect(() => {
@@ -34,7 +36,7 @@ function ProcessingPage() {
 
 
     return (
-        <Flex justifyContent="center" alignItems="center" w="100%" h="100%">
+        <Flex justifyContent="center" alignItems="center">
             <Spinner
                 thickness="4px"
                 speed="0.65s"

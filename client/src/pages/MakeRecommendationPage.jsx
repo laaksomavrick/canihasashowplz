@@ -4,6 +4,7 @@ import usePostRecommendationRequest from "../api/usePostRecommendationRequest.js
 import { useEffect } from "react";
 import { usePredictionContext } from "../contexts/PredictionContext.jsx";
 import { useNavigate } from "react-router-dom";
+import { ErrorMessage } from "../components/ErrorMessage.jsx";
 
 
 function MakeRecommendationPage() {
@@ -23,14 +24,6 @@ function MakeRecommendationPage() {
         await post(shows);
     });
 
-    // TODO: error handling
-    useEffect(() => {
-       if (isError == null || isError === false) {
-           return;
-       }
-       console.log(isError)
-    }, [isError])
-
     useEffect(() => {
         if (data == null) {
             return;
@@ -44,7 +37,7 @@ function MakeRecommendationPage() {
     return (
         <Flex flexDir="column">
             <Stack spacing={3}>
-                <Text fontSize="xl">Please enter three shows you enjoy to get a recommendation</Text>
+                <Text fontSize="2xl">Enter three television shows you enjoy to generate recommendations</Text>
                 <form onSubmit={onSubmit}>
                     <Stack spacing={3}>
                         <Input name="showOne" id="showOne" placeholder="Show one" {...register("showOne", { required: true })} size="lg" />
@@ -55,6 +48,7 @@ function MakeRecommendationPage() {
                         </Button>
                     </Stack>
                 </form>
+                <ErrorMessage isOpen={isError}/>
             </Stack>
         </Flex>
     );
