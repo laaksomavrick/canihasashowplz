@@ -23,10 +23,6 @@ def load_model(model_dir):
         f"Loading model with training_version={MODEL_TRAINING_VERSION} and data_version={MODEL_DATA_VERSION}"
     )
 
-    # training_job_name = f"{STACK_NAME}_model-{MODEL_TRAINING_VERSION}_data-{MODEL_DATA_VERSION}"
-    # output_path = os.path.join(model_dir, training_job_name, "output")
-    # logger.info(f"Path to look is {output_path}")
-
     graph_path = os.path.join(model_dir, f"graph-{MODEL_TRAINING_VERSION}.pkl")
     encoder_path = os.path.join(
         model_dir, f"label_encoder-{MODEL_TRAINING_VERSION}.pkl"
