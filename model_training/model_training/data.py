@@ -12,6 +12,9 @@ def get_ratings_data(bucket_name, file_key):
 
 
 def stratify_ratings_data(ratings_df):
+    # TODO: something is off about how this is stratifying the data
+    # training models with it gives poor recommendations
+    # look into it if required later?
     unique_show_ids = ratings_df["ShowId"].nunique()
     train_size = int(unique_show_ids * 0.8)
 
