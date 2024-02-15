@@ -28,7 +28,9 @@ def main():
     df = pipeline.fit_transform(train_set)
     transposed_df = df.T
 
-    model = NearestNeighbors(n_neighbors=5, metric="cosine", algorithm="brute", n_jobs=-1)
+    model = NearestNeighbors(
+        n_neighbors=5, metric="cosine", algorithm="brute", n_jobs=-1
+    )
     model.fit(transposed_df)
 
     graph = generate_graph(model, df)
