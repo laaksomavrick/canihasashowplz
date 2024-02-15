@@ -19,10 +19,6 @@ const useGetPredictionRequest = () => {
         },
       });
 
-      // if (!response.ok) {
-      //   throw new Error("Oops! Something went wrong.");
-      // }
-
       const result = await response.json();
       setData(result);
     } catch (error) {
