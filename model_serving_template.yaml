@@ -324,8 +324,9 @@ Resources:
                   - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
                     ModelInferenceVersion: !Ref ModelInferenceVersion
         ModelDataUrl: !Sub
-                        - s3://${ModelBucket}/${AWS::StackName}-model-${ModelTrainingVersion}-data-${ModelDataVersion}/output/model.tar.gz
-                        - ModelBucket: !ImportValue ModelBucketArn
+                        - s3://${ModelBucketName}/${ModelTrainingStackName}-model-${ModelTrainingVersion}-data-${ModelDataVersion}/output/model.tar.gz
+                        - ModelBucketName: !ImportValue ModelBucketName
+                          ModelTrainingStackName: !ImportValue ModelTrainingStackName
         Environment:
           STACK_NAME: !Sub ${AWS::StackName}
           MODEL_TRAINING_VERSION: !Ref ModelTrainingVersion

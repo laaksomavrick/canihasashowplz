@@ -413,6 +413,10 @@ Resources:
   # Only if model or data version have changed
 
 Outputs:
+  ModelTrainingStackName:
+    Value: !Ref AWS::StackName
+    Export:
+      Name: ModelTrainingStackName
   ShowTableArn:
     Value: !GetAtt ShowTable.Arn
     Export:
@@ -441,6 +445,10 @@ Outputs:
     Value: !GetAtt ModelBucket.Arn
     Export:
       Name: ModelBucketArn
+  ModelBucketName:
+    Value: !Ref ModelBucket
+    Export:
+      Name: ModelBucketName
   RatingsExportBucket:
     Value: !GetAtt RatingsExportBucket.Arn
     Export:
