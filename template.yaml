@@ -521,6 +521,7 @@ Resources:
 
   ShowTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       BillingMode: PAY_PER_REQUEST
       TableClass: STANDARD
@@ -545,6 +546,7 @@ Resources:
 
   RatingTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       BillingMode: PAY_PER_REQUEST
       TableClass: STANDARD
@@ -562,6 +564,7 @@ Resources:
 
   PredictionTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
     Properties:
       BillingMode: PAY_PER_REQUEST
       TableClass: STANDARD
