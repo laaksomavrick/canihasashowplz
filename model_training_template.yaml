@@ -410,20 +410,33 @@ Resources:
       BucketName: !Sub ${AWS::StackName}-ratingsexport
 
   # TODO: custom resource to invoke model training step function...?
+  # Only if model or data version have changed
 
 Outputs:
-  ShowTable:
-    Value: !Ref ShowTable
+  ShowTableArn:
+    Value: !GetAtt ShowTable.Arn
     Export:
       Name: ShowTableArn
-  PredictionTable:
-    Value: !Ref PredictionTable
+  ShowTableName:
+    Value: !Ref ShowTable
+    Export:
+      Name: ShowTableName
+  PredictionTableArn:
+    Value: !GetAtt PredictionTable.Arn
     Export:
       Name: PredictionTableArn
-  RatingTable:
-    Value: !Ref RatingTable
+  PredictionTableName:
+    Value: !Ref PredictionTable
+    Export:
+      Name: PredictionTableName
+  RatingTableArn:
+    Value: !GetAtt RatingTable.Arn
     Export:
       Name: RatingTableArn
+  RatingTableName:
+    Value: !Ref RatingTable
+    Export:
+      Name: RatingTableName
   ModelBucket:
     Value: !GetAtt ModelBucket.Arn
     Export:
@@ -435,4 +448,4 @@ Outputs:
   SageMakerExecutionRole:
     Value: !GetAtt SageMakerExecutionRole.Arn
     Export:
-      Name: SageMakerExecutionRole
+      Name: SageMakerExecutionRoleArn

@@ -3,8 +3,6 @@ Transform:
   - AWS::LanguageExtensions
   - AWS::Serverless-2016-10-31
 
-# TODO: !ImportValue cani-ShowTable
-
 Parameters:
   Environment:
     Type: String
@@ -64,7 +62,7 @@ Resources:
         Variables:
           PYTHON_ENV: !Ref Environment
           PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
-          SHOW_TABLE_NAME: !Ref ShowTable
+          SHOW_TABLE_NAME: !ImportValue ShowTableName
       Events:
         Query:
           Type: Api
@@ -123,10 +121,10 @@ Resources:
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
                 Resource:
-                  - !GetAtt ShowTable.Arn
+                  - !ImportValue ShowTableArn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !GetAtt ShowTable.Arn
+                    - TableName: !ImportValue ShowTableArn
 
   PredictionWorkerFunction:
     Type: AWS::Serverless::Function
@@ -136,8 +134,8 @@ Resources:
       Environment:
         Variables:
           PYTHON_ENV: !Ref Environment
-          PREDICTION_TABLE_NAME: !Ref PredictionTable
-          RATING_TABLE_NAME: !Ref RatingTable
+          PREDICTION_TABLE_NAME: !ImportValue PredictionTableName
+          RATING_TABLE_NAME: !ImportValue RatingTableName
           PREDICTION_ENDPOINT_NAME: !GetAtt SageMakerEndpoint.EndpointName
       Timeout: !Ref WorkerTimeout
       Events:
@@ -210,18 +208,18 @@ Resources:
                   - "dynamodb:Update*"
                   - "dynamodb:PutItem"
                 Resource:
-                  - !GetAtt ShowTable.Arn
+                  - !ImportValue ShowTableArn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !GetAtt ShowTable.Arn
-                  - !GetAtt RatingTable.Arn
+                    - TableName: !ImportValue ShowTableArn
+                  - !ImportValue RatingTableArn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !GetAtt RatingTable.Arn
-                  - !GetAtt PredictionTable.Arn
+                    - TableName: !ImportValue RatingTableArn
+                  - !ImportValue PredictionTableArn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !GetAtt PredictionTable.Arn
+                    - TableName: !ImportValue PredictionTableArn
 
   PredictionGetterFunction:
     Type: AWS::Serverless::Function
@@ -231,8 +229,8 @@ Resources:
       Environment:
         Variables:
           PYTHON_ENV: !Ref Environment
-          PREDICTION_TABLE_NAME: !Ref PredictionTable
-          SHOW_TABLE_NAME: !Ref ShowTable
+          PREDICTION_TABLE_NAME: !ImportValue PredictionTableName
+          SHOW_TABLE_NAME: !ImportValue ShowTableName
       Events:
         Query:
           Type: Api
@@ -287,14 +285,14 @@ Resources:
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
                 Resource:
-                  - !GetAtt ShowTable.Arn
+                  - !ImportValue ShowTableArn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !GetAtt ShowTable.Arn
-                  - !GetAtt PredictionTable.Arn
+                    - TableName: !ImportValue ShowTableArn
+                  - !ImportValue PredictionTableArn
                   - !Sub
                     - ${TableName}/*
-                    - TableName: !GetAtt PredictionTable.Arn
+                    - TableName: !ImportValue PredictionTableArn
 
   PredictionRequestQueue:
     Type: AWS::SQS::Queue
@@ -316,18 +314,18 @@ Resources:
               - "ecr:*"
               - "sagemaker:*"
 
-
-
   SageMakerModel:
     Type: AWS::SageMaker::Model
     Properties:
-      ExecutionRoleArn: !GetAtt SageMakerExecutionRole.Arn
+      ExecutionRoleArn: !ImportValue SageMakerExecutionRoleArn
       PrimaryContainer:
         Image: !Sub
                   - ${RepositoryUri}:${ModelInferenceVersion}
                   - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
                     ModelInferenceVersion: !Ref ModelInferenceVersion
-        ModelDataUrl: !Sub s3://${ModelBucket}/${AWS::StackName}-model-${ModelTrainingVersion}-data-${ModelDataVersion}/output/model.tar.gz
+        ModelDataUrl: !Sub
+                        - s3://${ModelBucket}/${AWS::StackName}-model-${ModelTrainingVersion}-data-${ModelDataVersion}/output/model.tar.gz
+                        - ModelBucket: !ImportValue ModelBucketArn
         Environment:
           STACK_NAME: !Sub ${AWS::StackName}
           MODEL_TRAINING_VERSION: !Ref ModelTrainingVersion
