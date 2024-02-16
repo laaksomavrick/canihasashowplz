@@ -409,9 +409,6 @@ Resources:
     Properties:
       BucketName: !Sub ${AWS::StackName}-ratingsexport
 
-  # TODO: custom resource to invoke model training step function...?
-  # Only if model or data version have changed
-
 Outputs:
   ModelTrainingStackName:
     Value: !Ref AWS::StackName

@@ -13,7 +13,7 @@ build-model-training-staging:
 
 .PHONY: deploy-model-training-staging
 deploy-model-training-staging:
-	@$(MAKE) deploy-staging TEMPLATE_FILE=$(MODEL_TRAINING_TEMPLATE) CONFIG_FILE=$(MODEL_TRAINING_CONFIG)
+	@$(MAKE) deploy-staging CONFIG_FILE=$(MODEL_TRAINING_CONFIG)
 
 .PHONY: build-model-serving-staging
 build-model-serving-staging:
@@ -21,15 +21,39 @@ build-model-serving-staging:
 
 .PHONY: deploy-model-serving-staging
 deploy-model-serving-staging:
-	@$(MAKE) deploy-staging TEMPLATE_FILE=$(MODEL_SERVING_TEMPLATE) CONFIG_FILE=$(MODEL_SERVING_CONFIG)
+	@$(MAKE) deploy-staging CONFIG_FILE=$(MODEL_SERVING_CONFIG)
 
 .PHONY: build-staging
 build-staging:
-	@sam build  --cached --skip-pull-image --build-in-source --parallel -t $(TEMPLATE_FILE) --config-file $(CONFIG_FILE) --config-env staging --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
+	@sam build  --cached --skip-pull-image --build-in-source --parallel -t $(TEMPLATE_FILE) --config-file $(CONFIG_FILE) --config-env staging --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION) Environment=staging
 
 .PHONY: deploy-staging
 deploy-staging:
 	@sam deploy --config-file $(CONFIG_FILE) --config-env staging --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION) Environment=staging
+
+.PHONY: build-model-training-prod
+build-model-training-prod:
+	@$(MAKE) build-prod TEMPLATE_FILE=$(MODEL_TRAINING_TEMPLATE) CONFIG_FILE=$(MODEL_TRAINING_CONFIG)
+
+.PHONY: deploy-model-training-prod
+deploy-model-training-prod:
+	@$(MAKE) deploy-prod CONFIG_FILE=$(MODEL_TRAINING_CONFIG)
+
+.PHONY: deploy-model-training-prod-ci
+deploy-model-training-prod-ci:
+	@$(MAKE) deploy-prod-ci CONFIG_FILE=$(MODEL_TRAINING_CONFIG)
+
+.PHONY: build-model-serving-prod
+build-model-serving-prod:
+	@$(MAKE) build-prod TEMPLATE_FILE=$(MODEL_SERVING_TEMPLATE) CONFIG_FILE=$(MODEL_SERVING_CONFIG)
+
+.PHONY: deploy-model-serving-prod
+deploy-model-serving-prod:
+	@$(MAKE) deploy-prod TEMPLATE_FILE=$(MODEL_SERVING_TEMPLATE) CONFIG_FILE=$(MODEL_SERVING_CONFIG)
+
+.PHONY: deploy-model-serving-prod-ci
+deploy-model-serving-prod-ci:
+	@$(MAKE) deploy-prod-ci CONFIG_FILE=$(MODEL_SERVING_CONFIG)
 
 .PHONY: build-prod
 build-prod:
@@ -37,8 +61,8 @@ build-prod:
 
 .PHONY: deploy-prod
 deploy-prod:
-	@sam deploy --config-env prod --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION) Environment=prod
+	@sam deploy --config-file $(CONFIG_FILE) --config-env prod --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION) Environment=prod
 
 .PHONY: deploy-prod-ci
 deploy-prod-ci:
-	@sam deploy --config-env prod --no-confirm-changeset --no-fail-on-empty-changeset --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
+	@sam deploy --config-file $(CONFIG_FILE) --config-env prod --no-confirm-changeset --no-fail-on-empty-changeset --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION) Environment=prod
