@@ -17,11 +17,11 @@ deploy-model-training-staging:
 
 .PHONY: build-staging
 build-staging:
-	@sam build --cached --skip-pull-image --build-in-source --parallel -t $(TEMPLATE_FILE) --config-file $(CONFIG_FILE) --config-env staging --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
+	@sam build  --cached --skip-pull-image --build-in-source --parallel -t $(TEMPLATE_FILE) --config-file $(CONFIG_FILE) --config-env staging --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
 
 .PHONY: deploy-staging
 deploy-staging:
-	@sam deploy -t $(TEMPLATE_FILE) --config-file $(CONFIG_FILE) --config-env staging --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
+	@sam deploy --config-file $(CONFIG_FILE) --config-env staging --resolve-image-repos --parameter-overrides ModelInferenceVersion=$(MODEL_INFERENCE_VERSION) ModelDataVersion=$(MODEL_DATA_VERSION) ModelTrainingVersion=$(MODEL_TRAINING_VERSION)
 
 .PHONY: build-prod
 build-prod:
