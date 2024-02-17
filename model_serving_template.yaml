@@ -1,0 +1,364 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform:
+  - AWS::LanguageExtensions
+  - AWS::Serverless-2016-10-31
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - staging
+      - prod
+  GitShaHash:
+    Type: String
+    Default: latest
+  WorkerTimeout:
+    Type: Number
+    Default: 900
+  ModelInferenceVersion:
+    Type: String
+    Default: latest
+  ModelDataVersion:
+    Type: String
+    Default: latest
+  ModelTrainingVersion:
+    Type: String
+    Default: latest
+
+Globals:
+  Function:
+    Architectures:
+      - x86_64
+    Timeout: 30
+    MemorySize: 128
+    AutoPublishAlias: live
+    DeploymentPreference:
+      Type: AllAtOnce
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, "prod"]
+  IsStaging: !Equals [!Ref Environment, "staging"]
+
+# TODO: review IAM policies to reduce permissions scope to only what is required
+
+Resources:
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v1
+      Cors:
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowMethods: "'OPTIONS,POST,GET'"
+        AllowOrigin: "'*'"
+      EndpointConfiguration:
+        Type: REGIONAL
+
+  PredictionAckFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt PredictionAckRole.Arn
+      Environment:
+        Variables:
+          PYTHON_ENV: !Ref Environment
+          SHOW_TABLE_NAME:
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+      Events:
+        Query:
+          Type: Api
+          Properties:
+            Path: /shows/recommend
+            Method: post
+            RestApiId: !Ref ApiGateway
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./prediction_ack
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  PredictionAckFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PredictionAckFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionAckRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestQueueSender
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:SendMessage'
+                Resource: !GetAtt PredictionRequestQueue.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionAckData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName:
+                        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+
+  PredictionWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt PredictionWorkerRole.Arn
+      Environment:
+        Variables:
+          PYTHON_ENV: !Ref Environment
+          PREDICTION_TABLE_NAME:
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableName
+          RATING_TABLE_NAME:
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-RatingTableName
+          PREDICTION_ENDPOINT_NAME: !GetAtt SageMakerEndpoint.EndpointName
+      Timeout: !Ref WorkerTimeout
+      Events:
+        PredictionRequest:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PredictionRequestQueue.Arn
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./prediction_worker
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  PredictionWorkerFunctionFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PredictionWorkerFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionWorkerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+        - PolicyName: "SageMakerInvokePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "sagemaker:InvokeEndpoint"
+                Resource:
+                  - '*'
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestQueueReceiver
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:ReceiveMessage'
+                Resource: !GetAtt PredictionRequestQueue.Arn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionRequestData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                  - "dynamodb:BatchWrite*"
+                  - "dynamodb:CreateTable"
+                  - "dynamodb:Delete*"
+                  - "dynamodb:Update*"
+                  - "dynamodb:PutItem"
+                Resource:
+                  - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName:
+                        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+                  - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-RatingTableArn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName:
+                        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-RatingTableArn
+                  - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableArn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName:
+                        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableArn
+
+  PredictionGetterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Role: !GetAtt PredictionGetterRole.Arn
+      Environment:
+        Variables:
+          PYTHON_ENV: !Ref Environment
+          SHOW_TABLE_NAME:
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+          PREDICTION_TABLE_NAME:
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableName
+      Events:
+        Query:
+          Type: Api
+          Properties:
+            Path: /prediction
+            Method: GET
+            RestApiId: !Ref ApiGateway
+            RequestParameters:
+              - method.request.querystring.prediction_id:
+                  Required: true
+      LoggingConfig:
+        ApplicationLogLevel: INFO
+        LogFormat: JSON
+    Metadata:
+      Dockerfile: ./Dockerfile
+      DockerContext: ./prediction_getter
+      DockerTag: !If [ IsProd, !Ref GitShaHash, latest ]
+
+  PredictionGetterFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${PredictionGetterFunction}
+      RetentionInDays: !If [ IsProd, 30, 7 ]
+
+  PredictionGetterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
+      Policies:
+
+        - PolicyName: !Sub ${AWS::StackName}-PredictionGetterData
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "dynamodb:BatchGet*"
+                  - "dynamodb:DescribeStream"
+                  - "dynamodb:DescribeTable"
+                  - "dynamodb:Get*"
+                  - "dynamodb:Query"
+                  - "dynamodb:Scan"
+                Resource:
+                  - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName:
+                        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+                  - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableArn
+                  - !Sub
+                    - ${TableName}/*
+                    - TableName:
+                        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableArn
+
+
+  PredictionRequestQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      VisibilityTimeout: !Ref WorkerTimeout
+
+  ModelInferenceRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${AWS::StackName}/modelinferencerepo
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowSageMakerAccess
+            Effect: Allow
+            Principal:
+              Service: "sagemaker.amazonaws.com"
+            Action:
+              - "ecr:*"
+              - "sagemaker:*"
+
+  SageMakerModel:
+    Type: AWS::SageMaker::Model
+    Properties:
+      ExecutionRoleArn:
+        Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-SageMakerExecutionRoleArn
+      PrimaryContainer:
+        Image: !Sub
+                  - ${RepositoryUri}:${ModelInferenceVersion}
+                  - RepositoryUri: !GetAtt ModelInferenceRepository.RepositoryUri
+                    ModelInferenceVersion: !Ref ModelInferenceVersion
+        ModelDataUrl: !Sub
+                        - s3://${ModelBucketName}/${ModelTrainingStackName}-model-${ModelTrainingVersion}-data-${ModelDataVersion}/output/model.tar.gz
+                        - ModelBucketName:
+                            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ModelBucketName
+                          ModelTrainingStackName: !Sub canihaveatvshowplz-${Environment}
+        Environment:
+          STACK_NAME: !Sub ${AWS::StackName}
+          MODEL_TRAINING_VERSION: !Ref ModelTrainingVersion
+          MODEL_DATA_VERSION: !Ref ModelDataVersion
+          MODEL_INFERENCE_VERSION: !Ref ModelInferenceVersion
+
+  SageMakerEndpoint:
+    Type: AWS::SageMaker::Endpoint
+    Properties:
+      EndpointConfigName: !GetAtt SageMakerServerlessEndpointConfig.EndpointConfigName
+      EndpointName: !Sub ${AWS::StackName}
+
+  SageMakerServerlessEndpointConfig:
+    Type: AWS::SageMaker::EndpointConfig
+    Properties:
+      ProductionVariants:
+        - InitialVariantWeight: 1
+          ModelName: !GetAtt SageMakerModel.ModelName
+          VariantName: 'AllTrafficV3'
+          ServerlessConfig:
+            MaxConcurrency: 1
+            MemorySizeInMB: 2048

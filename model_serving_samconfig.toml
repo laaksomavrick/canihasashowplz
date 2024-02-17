@@ -1,0 +1,38 @@
+version = 0.1
+
+[staging.build.parameters]
+parallel = true
+
+[prod.build.parameters]
+parallel = true
+
+[staging.validate.parameters]
+lint = true
+
+[prod.validate.parameters]
+lint = true
+
+[staging.package.parameters]
+resolve_s3 = true
+
+[prod.package.parameters]
+resolve_s3 = true
+
+[staging.deploy.parameters]
+stack_name = "canihaveatvshowplz-serving-staging"
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "Environment=staging"
+s3_bucket = "canihaveatvshowplz-serving-samclisourcebucket"
+tags = "Environment=\"staging\" Project=\"canihaveatvshowplz-serving\""
+confirm_changeset = true
+resolve_image_repos = true
+
+[prod.deploy.parameters]
+stack_name = "canihaveatvshowplz-serving-prod"
+capabilities = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "Environment=prod"
+s3_bucket = "canihaveatvshowplz-serving-samclisourcebucket"
+tags = "Environment=\"prod\" Project=\"canihaveatvshowplz-serving\""
+confirm_changeset = true
+resolve_image_repos = true
+

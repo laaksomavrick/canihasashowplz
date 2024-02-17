@@ -53,7 +53,7 @@ def push_to_ecr(image_name, repository_uri):
 def main():
     image_name = "modelinference"
     dockerfile_path = "Dockerfile"
-    repository_uri = "844544735981.dkr.ecr.ca-central-1.amazonaws.com/canihaveatvshowplz-staging/modelinferencerepo"
+    repository_uri = "844544735981.dkr.ecr.ca-central-1.amazonaws.com/canihaveatvshowplz-serving-staging/modelinferencerepo"
 
     build_docker_image(image_name, dockerfile_path)
     push_to_ecr(image_name, repository_uri)

@@ -1,4 +1,4 @@
-name: Deploy lambdas
+name: Build and deploy infrastructure
 
 on:
   push:
@@ -6,16 +6,19 @@ on:
     paths:
      - 'prediction_ack/**'
      - 'prediction_worker/**'
+     - 'prediction_getter/**'
      - 'model_inference/**'
      - 'model_trainer/**'
      - 'model_training/**'
      - 'ratings_exporter/**'
-     - 'template.yaml'
+     - 'model_serving_template.yaml'
+     - 'model_training_template.yaml'
 
 env:
   DOCKER_REGISTRY_URL: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com
   DOCKER_INFERENCE_REPO_URL: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_INFERENCE_REPO_NAME }}
   DOCKER_TRAINING_REPO_URL: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com/${{ vars.ECR_TRAINING_REPO_NAME }}
+  MODEL_TRAINING_STEP_FUNCTION_ARN: ${{ vars.MODEL_TRAINING_STEP_FUNCTION }}
 
 jobs:
   model-inference-changes:
@@ -50,7 +53,8 @@ jobs:
         with:
           filters: |
             changed:
-              - 'model_training/version'
+              - 'model_training/training_version'
+              - 'model_training/data_version'
 
   upload-model-inference-image:
     name: Upload model inference image to ECR
@@ -60,32 +64,25 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
-
       - name: Set DOCKER_IMAGE_TAG environment variable
         run: echo "DOCKER_IMAGE_TAG=$(cat model_inference/version)" >> $GITHUB_ENV
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           version: latest
           driver-opts: 'image=moby/buildkit:v0.10.5'
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
           aws-region: ${{ vars.AWS_REGION }}
-
       - name: Login to ECR registry
         run: aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.DOCKER_REGISTRY_URL }}
-
       - name: Build and push container image
         uses: docker/build-push-action@v5
         with:
@@ -102,32 +99,25 @@ jobs:
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
-
       - name: Set DOCKER_IMAGE_TAG environment variable
-        run: echo "DOCKER_IMAGE_TAG=$(cat model_training/version)" >> $GITHUB_ENV
-
+        run: echo "DOCKER_IMAGE_TAG=$(cat model_training/training_version)" >> $GITHUB_ENV
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           version: latest
           driver-opts: 'image=moby/buildkit:v0.10.5'
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
           aws-region: ${{ vars.AWS_REGION }}
-
       - name: Login to ECR registry
         run: aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.DOCKER_REGISTRY_URL }}
-
       - name: Build and push container image
         uses: docker/build-push-action@v5
         with:
@@ -136,8 +126,8 @@ jobs:
           tags: ${{ env.DOCKER_TRAINING_REPO_URL }}:${{ env.DOCKER_IMAGE_TAG }}
           push: true
 
-  deploy-sam:
-    name: Build and deploy SAM infrastructure
+  deploy-model-training:
+    name: Build and deploy model training infrastructure
     if: ${{ always() }}
     needs: [model-inference-changes, upload-model-inference-image, model-training-changes, upload-model-training-image]
     runs-on: ubuntu-latest
@@ -154,7 +144,63 @@ jobs:
         with:
           role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
           aws-region: ${{ vars.AWS_REGION }}
-      - name: Build SAM template
-        run: make build-prod
-      - name: Deploy SAM template changes
-        run: make deploy-prod-ci
+      - name: Build model training template
+        run: make build-model-training-prod
+      - name: Deploy model training
+        run: make deploy-model-training-prod-ci
+
+  trigger-model-training:
+    name: Trigger data export and model re-training
+    needs: [deploy-model-training, model-training-changes]
+    if: ${{ needs.model-training-changes.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Trigger data export and model training workflow
+        run: |
+          execution_arn=$(aws stepfunctions start-execution --state-machine-arn ${{ env.MODEL_TRAINING_STEP_FUNCTION_ARN }} --query 'executionArn' --output text)
+          echo "Execution started with ARN: $execution_arn"
+
+          while true; do
+            status=$(aws stepfunctions describe-execution --execution-arn $execution_arn --query 'status' --output text)
+            if [[ $status == "SUCCEEDED" ]]; then
+              echo "Execution finished with status: $status"
+              break
+            elif [[ $status == "FAILED" || $status == "TIMED_OUT" ]]; then
+              echo "Execution finished with status: $status"
+              exit 1;
+            fi
+            sleep 10
+          done
+
+  deploy-model-serving:
+    name: Build and deploy model serving infrastructure
+    if: ${{ always() }}
+    needs: [deploy-model-training, trigger-model-training, model-inference-changes, upload-model-inference-image, model-training-changes, upload-model-training-image]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v1
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Build model serving template
+        run: make build-model-serving-prod
+      - name: Deploy model training
+        run: make deploy-model-serving-prod-ci
