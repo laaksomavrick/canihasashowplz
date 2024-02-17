@@ -410,47 +410,43 @@ Resources:
       BucketName: !Sub ${AWS::StackName}-ratingsexport
 
 Outputs:
-  ModelTrainingStackName:
-    Value: !Ref AWS::StackName
-    Export:
-      Name: ModelTrainingStackName
   ShowTableArn:
     Value: !GetAtt ShowTable.Arn
     Export:
-      Name: ShowTableArn
+      Name: !Sub ${AWS::StackName}-ShowTableArn
   ShowTableName:
     Value: !Ref ShowTable
     Export:
-      Name: ShowTableName
+      Name: !Sub ${AWS::StackName}-ShowTableName
   PredictionTableArn:
     Value: !GetAtt PredictionTable.Arn
     Export:
-      Name: PredictionTableArn
+      Name: !Sub ${AWS::StackName}-PredictionTableArn
   PredictionTableName:
     Value: !Ref PredictionTable
     Export:
-      Name: PredictionTableName
+      Name: !Sub ${AWS::StackName}-PredictionTableName
   RatingTableArn:
     Value: !GetAtt RatingTable.Arn
     Export:
-      Name: RatingTableArn
+      Name: !Sub ${AWS::StackName}-RatingTableArn
   RatingTableName:
     Value: !Ref RatingTable
     Export:
-      Name: RatingTableName
+      Name: !Sub ${AWS::StackName}-RatingTableName
   ModelBucket:
     Value: !GetAtt ModelBucket.Arn
     Export:
-      Name: ModelBucketArn
+      Name: !Sub ${AWS::StackName}-ModelBucketArn
   ModelBucketName:
     Value: !Ref ModelBucket
     Export:
-      Name: ModelBucketName
+      Name: !Sub ${AWS::StackName}-ModelBucketName
   RatingsExportBucket:
     Value: !GetAtt RatingsExportBucket.Arn
     Export:
-      Name: RatingsExportBucketArn
+      Name: !Sub ${AWS::StackName}-RatingsExportBucketArn
   SageMakerExecutionRole:
     Value: !GetAtt SageMakerExecutionRole.Arn
     Export:
-      Name: SageMakerExecutionRoleArn
+      Name: !Sub ${AWS::StackName}-SageMakerExecutionRoleArn
