@@ -129,7 +129,7 @@ jobs:
   deploy-model-training:
     name: Build and deploy model training infrastructure
     if: ${{ always() }}
-    needs: [model-inference-changes, upload-model-inference-image, model-training-changes, upload-model-training-image]
+    needs: [model-training-changes, upload-model-training-image]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -151,7 +151,7 @@ jobs:
 
   trigger-model-training:
     name: Trigger data export and model re-training
-    needs: [deploy-model-training, model-training-changes]
+    needs: [model-training-changes, deploy-model-training]
     if: ${{ needs.model-training-changes.outputs.changed == 'true' }}
     runs-on: ubuntu-latest
     permissions:
