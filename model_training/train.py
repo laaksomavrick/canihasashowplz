@@ -5,9 +5,8 @@ import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 
-from model_training.data import stratify_ratings_data
 from model_training.graph import generate_graph
-from model_training.pipelines import get_knn_graph_pipeline
+from model_training.pipelines import get_knn_pipeline
 
 RATING_BUCKET_NAME = os.getenv("RATING_BUCKET_NAME")
 RATING_FILE_NAME = os.getenv("RATING_FILE_NAME")
@@ -22,15 +21,16 @@ model_path = os.path.join(prefix, "model")
 def main():
     label_encoder = LabelEncoder()
 
-    ratings_df = pd.read_csv(ratings_file_path)
-    train_set, test_set = stratify_ratings_data(ratings_df)
+    train_set = pd.read_csv(ratings_file_path)
 
-    pipeline = get_knn_graph_pipeline(label_encoder=label_encoder)
+    pipeline = get_knn_pipeline(label_encoder=label_encoder)
 
     df = pipeline.fit_transform(train_set)
     transposed_df = df.T
 
-    model = NearestNeighbors(n_neighbors=5, metric="jaccard", n_jobs=-1)
+    model = NearestNeighbors(
+        n_neighbors=5, metric="cosine", algorithm="brute", n_jobs=-1
+    )
     model.fit(transposed_df)
 
     graph = generate_graph(model, df)

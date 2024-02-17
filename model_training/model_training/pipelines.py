@@ -9,7 +9,7 @@ from model_training.transformers import (
 )
 
 
-def get_knn_graph_pipeline(**kwargs):
+def get_knn_pipeline(**kwargs):
     show_user_encoder = ShowUserEncoder(encoder=kwargs["label_encoder"])
     drop_duplicates = DropDuplicates(columns_to_drop_dupes=["UserId", "ShowId"])
     drop_columns = DropColumns(
