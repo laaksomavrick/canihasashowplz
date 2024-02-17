@@ -62,7 +62,8 @@ Resources:
         Variables:
           PYTHON_ENV: !Ref Environment
           SHOW_TABLE_NAME:
-            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableName
+          PREDICTION_QUEUE_URL: !Ref PredictionRequestQueue
       Events:
         Query:
           Type: Api
@@ -120,6 +121,7 @@ Resources:
                   - "dynamodb:Get*"
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
+                  - "dynamodb:PutItem"
                 Resource:
                   - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
                   - !Sub
@@ -236,7 +238,7 @@ Resources:
         Variables:
           PYTHON_ENV: !Ref Environment
           SHOW_TABLE_NAME:
-            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
+            Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableName
           PREDICTION_TABLE_NAME:
             Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableName
       Events:
@@ -279,7 +281,6 @@ Resources:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole'
       Policies:
-
         - PolicyName: !Sub ${AWS::StackName}-PredictionGetterData
           PolicyDocument:
             Version: '2012-10-17'
