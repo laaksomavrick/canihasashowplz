@@ -1,4 +1,4 @@
-name: Deploy lambdas
+name: Build and deploy infrastructure
 
 on:
   push:
@@ -103,7 +103,7 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v2
       - name: Set DOCKER_IMAGE_TAG environment variable
-        run: echo "DOCKER_IMAGE_TAG=$(cat model_training/version)" >> $GITHUB_ENV
+        run: echo "DOCKER_IMAGE_TAG=$(cat model_training/training_version)" >> $GITHUB_ENV
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -125,10 +125,6 @@ jobs:
           platforms: linux/amd64
           tags: ${{ env.DOCKER_TRAINING_REPO_URL }}:${{ env.DOCKER_IMAGE_TAG }}
           push: true
-
-  # deploy-model-training
-  # toggle step function (only if model-training changed)
-  # deploy-model-serving
 
   deploy-model-training:
     name: Build and deploy model training infrastructure
@@ -176,15 +172,18 @@ jobs:
 
           while true; do
             status=$(aws stepfunctions describe-execution --execution-arn $execution_arn --query 'status' --output text)
-            if [[ $status == "SUCCEEDED" || $status == "FAILED" || $status == "TIMED_OUT" ]]; then
+            if [[ $status == "SUCCEEDED" ]]; then
               echo "Execution finished with status: $status"
               break
+            elif [[ $status == "FAILED" || $status == "TIMED_OUT" ]]; then
+              echo "Execution finished with status: $status"
+              exit 1;
             fi
             sleep 10
           done
 
   deploy-model-serving:
-    name: Build and deploy SAM infrastructure
+    name: Build and deploy model serving infrastructure
     if: ${{ always() }}
     needs: [deploy-model-training, trigger-model-training, model-inference-changes, upload-model-inference-image, model-training-changes, upload-model-training-image]
     runs-on: ubuntu-latest
