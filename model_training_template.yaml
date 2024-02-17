@@ -249,8 +249,6 @@ Resources:
                   - "ecr:ListImages"
                 Resource:
                   - '*'
-#                  - !GetAtt ModelInferenceRepository.Arn
-#                  - !GetAtt ModelTrainingRepository.Arn
         - PolicyName: "CloudwatchAccess"
           PolicyDocument:
             Version: "2012-10-17"

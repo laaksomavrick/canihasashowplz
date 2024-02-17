@@ -121,7 +121,7 @@ jobs:
       - name: Build and push container image
         uses: docker/build-push-action@v5
         with:
-          context: model_inference
+          context: model_training
           platforms: linux/amd64
           tags: ${{ env.DOCKER_TRAINING_REPO_URL }}:${{ env.DOCKER_IMAGE_TAG }}
           push: true
@@ -165,6 +165,10 @@ jobs:
         with:
           role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
           aws-region: ${{ vars.AWS_REGION }}
+      - name: Set MODEL_TRAINING_VERSION environment variable
+        run: echo "MODEL_TRAINING_VERSION=$(cat model_training/training_version)" >> $GITHUB_ENV
+      - name: Set MODEL_DATA_VERSION environment variable
+        run: echo "MODEL_DATA_VERSION=$(cat model_training/data_version)" >> $GITHUB_ENV
       - name: Trigger data export and model training workflow
         run: |
           execution_arn=$(aws stepfunctions start-execution --state-machine-arn ${{ env.MODEL_TRAINING_STEP_FUNCTION_ARN }} --query 'executionArn' --output text)
@@ -180,6 +184,42 @@ jobs:
               exit 1;
             fi
             sleep 10
+          done
+      - name: Wait for training job completion
+        run: |
+          training_job_name="canihaveatvshowplz-prod-model-${{ env.MODEL_TRAINING_VERSION }}-data-${{ env.MODEL_DATA_VERSION }}"
+          timeout=43200
+          start_time=$(date +%s)
+          
+          while true; do
+            response=$(aws sagemaker describe-training-job --training-job-name "$training_job_name" 2>/dev/null)
+
+            if [[ -z $response ]]; then
+                echo "Training job $training_job_name not found."
+                exit 1
+            fi
+
+            status=$(echo "$response" | jq -r '.TrainingJobStatus')
+
+            if [[ $status == "Completed" ]]; then
+                echo "Training job $training_job_name finished with status: $status"
+                exit 0 
+            fi
+          
+          if [[ $status == "Failed" || $status == "Stopped" ]]; then
+                echo "Training job $training_job_name finished with status: $status"
+                exit 1
+            fi
+
+            current_time=$(date +%s)
+            elapsed_time=$((current_time - start_time))
+
+            if [ $elapsed_time -ge $timeout ]; then
+                echo "Timeout reached. Training job $training_job_name not finished after $timeout seconds."
+                exit 1  
+            fi
+
+            sleep 15 
           done
 
   deploy-model-serving:
