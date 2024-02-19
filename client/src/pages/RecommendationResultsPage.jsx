@@ -13,7 +13,7 @@ function RecommendationResultsPage() {
      <Flex alignItems="center" flexDir="column">
          <Text
                     fontSize="2xl"
-                    color="white"
+                    color="gray.700"
                     margin="auto"
                     pb="2"
                     fontWeight="medium"
