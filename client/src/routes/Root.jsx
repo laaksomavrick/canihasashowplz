@@ -19,7 +19,7 @@ export default function Root() {
                       style={{
                           'text-shadow': '4px 4px 0 #2D3748, -1px 1px 0 #2D3748, -1px -1px 0 #2D3748, 1px -1px 0 #2D3748'
                       }}
-                  >canihasashowplz</Heading>
+                  >canihasashowplz?</Heading>
               </Flex>
               <Box px="6">
                   <Outlet />

@@ -293,6 +293,8 @@ Resources:
                   - "dynamodb:Get*"
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
+                  - "dynamodb:Update*"
+                  - "dynamodb:PutItem"
                 Resource:
                   - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
                   - !Sub

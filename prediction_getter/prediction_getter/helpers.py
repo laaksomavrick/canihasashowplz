@@ -23,11 +23,11 @@ def get_prediction(prediction_id):
     return item
 
 
-def get_show_titles(show_ids, logger):
+def get_shows(show_ids, logger):
     dynamodb = boto3.resource("dynamodb")
     table = dynamodb.Table(SHOW_TABLE)
 
-    show_titles = []
+    shows = []
 
     for show_id in show_ids:
         response = table.get_item(Key={"ShowId": show_id})
@@ -39,38 +39,84 @@ def get_show_titles(show_ids, logger):
             continue
 
         item = response["Item"]
-        title = item["HumanTitle"]
-        show_titles.append(title)
 
-    return show_titles
+        normalized_title = item.get("HumanTitle", None)
+
+        logo_url = item.get("LogoUrl", None)
+        description = item.get("Description", None)
+        air_date = item.get("AirDate", None)
+        rating = item.get("Rating", None)
+
+        logger.info("Found show for id", extra={"show": item})
+
+        if (
+            logo_url is None
+            or description is None
+            or air_date is None
+            or rating is None
+        ):
+            logger.info(
+                "Attempting to retrieve more metadata for show",
+                extra={"show_id": show_id},
+            )
+            show_metadata = get_show_info_from_api(normalized_title, logger)
+            update_show(item, show_metadata)
+            response = table.get_item(Key={"ShowId": show_id})
+            item = response["Item"]
+
+        show_data = {
+            "id": item["ShowId"],
+            "title": item["HumanTitle"],
+            "normalized_title": item["Title"],
+            "logo_url": item["LogoUrl"],
+            "description": item["Description"],
+            "air_date": item["AirDate"],
+            "rating": item["Rating"],
+        }
+        shows.append(show_data)
+
+    return shows
 
 
-def get_show_info(show_name):
-    info = get_show_info_from_api(show_name)
+def update_show(show, show_metadata):
+    dynamodb = boto3.client("dynamodb")
 
-    if info is not None:
-        return info
+    item = {
+        "ShowId": {"S": show["ShowId"]},
+        "HumanTitle": {"S": show["HumanTitle"]},
+        "Title": {"S": show["Title"]},
+        "LogoUrl": {"S": show_metadata["logo_url"]},
+        "Description": {"S": show_metadata["description"]},
+        "AirDate": {"S": show_metadata["air_date"]},
+        "Rating": {"S": str(show_metadata["rating"])},
+    }
 
-    info = get_show_info_from_api(show_name)
-    # TODO: store in database
-    return info
+    response = dynamodb.put_item(TableName=SHOW_TABLE, Item=item)
+
+    return response
 
 
-def get_show_info_from_db(show_name):
-    # TODO: implement me
-    return None
+def get_show_info_from_api(show_name, logger):
+    url = f"https://api.themoviedb.org/3/search/tv"
 
-
-def get_show_info_from_api(show_name):
-    url = f"https://api.themoviedb.org/3/search/tv?query={show_name}&include_adult=false&language=en-US&page=1"
+    query_params = {
+        "query": show_name,
+        "include_adult": False,
+        "language": "en-US",
+        "page": 1,
+    }
     token = get_show_data_access_token()
 
     headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, params=query_params)
     response = json.loads(response.text)
 
     results = response.get("results", None)
+
+    logger.info(
+        "Found response for show metadata retrieval", extra={"results": results}
+    )
 
     if results is None:
         return None

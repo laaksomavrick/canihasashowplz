@@ -4,11 +4,13 @@ import { Navigate } from "react-router-dom";
 import ShowCard from "../components/ShowCard.jsx";
 
 function RecommendationResultsPage() {
-    const { shows } = usePredictionContext();
+    const { shows, predictionId } = usePredictionContext();
 
-    if (shows == null || shows.length === 0) {
+    if (predictionId == null) {
         return <Navigate to='/'></Navigate>
     }
+
+    // TODO: handle no results without redirecting to ^
 
   return (
      <Flex alignItems="center" flexDir="column">
@@ -21,9 +23,21 @@ function RecommendationResultsPage() {
                 >
              The results are in:
          </Text>
-         <Grid templateRows="1fr" templateColumns="1fr" gap={4}>
-             {shows.map(show => <ShowCard key={show.title} show={show} />)}
-         </Grid>
+         {shows.length === 0 ? (
+            <Text
+                    fontSize="2xl"
+                    color="gray.700"
+                    margin="auto"
+                    py="6"
+                    fontWeight="medium"
+                >
+                Sorry! We can't make any recommendations given the provided shows you like. Try again later.
+         </Text>
+         ) : (
+             <Grid templateRows="1fr" templateColumns="1fr" gap={4}>
+                 {shows.map(show => <ShowCard key={show.title} show={show} />)}
+             </Grid>
+         )}
     </Flex>
   )
 }
