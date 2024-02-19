@@ -10,8 +10,6 @@ function RecommendationResultsPage() {
         return <Navigate to='/'></Navigate>
     }
 
-    // TODO: handle no results without redirecting to ^
-
   return (
      <Flex alignItems="center" flexDir="column">
          <Text
