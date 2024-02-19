@@ -41,7 +41,7 @@ function MakeRecommendationPage() {
                     fontSize="2xl"
                     color="gray.700"
                     margin="auto"
-                    pb="2"
+                    pb="4"
                     fontWeight="medium"
                 >
                     To begin, submit three television shows you enjoy:</Text>

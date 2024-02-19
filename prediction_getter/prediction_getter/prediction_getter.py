@@ -1,7 +1,7 @@
 import json
 import logging
 
-from prediction_getter.helpers import get_prediction, get_show_titles
+from prediction_getter.helpers import get_prediction, get_show_titles, get_show_info
 
 logger = logging.getLogger()
 
@@ -28,9 +28,15 @@ def lambda_handler(event, context):
 
     logger.info(f"Found titles", extra={"predicted_show_titles": predicted_show_titles})
 
+    shows = []
+
+    for show_title in predicted_show_titles:
+        show = get_show_info(show_title)
+        shows.append(show)
+
     return {
         "statusCode": 200,
-        "body": json.dumps({"show_titles": predicted_show_titles}),
+        "body": json.dumps({"shows": shows}),
         "headers": {
             "Access-Control-Allow-Headers": "Content-Type",
             "Access-Control-Allow-Origin": "*",

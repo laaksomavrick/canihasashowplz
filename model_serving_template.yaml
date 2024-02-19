@@ -304,6 +304,15 @@ Resources:
                     - ${TableName}/*
                     - TableName:
                         Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableArn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionGetterParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameter*"
+                Resource:
+                  - '*'
 
 
   PredictionRequestQueue:

@@ -29,7 +29,7 @@ function ProcessingPage() {
             return;
         }
 
-        setShows(data["show_titles"]);
+        setShows(data["shows"]);
         navigate("/results");
 
     }, [data]);
