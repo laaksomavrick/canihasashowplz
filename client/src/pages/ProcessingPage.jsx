@@ -36,12 +36,8 @@ function ProcessingPage() {
 
 
     return (
-        <Flex justifyContent="center" alignItems="center">
+        <Flex justifyContent="center" alignItems="center" h="100%">
             <Spinner
-                thickness="4px"
-                speed="0.65s"
-                emptyColor="gray.200"
-                color="teal.500"
                 size="xl"
             />
         </Flex>

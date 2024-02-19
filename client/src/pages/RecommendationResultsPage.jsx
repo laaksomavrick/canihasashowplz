@@ -11,8 +11,14 @@ function RecommendationResultsPage() {
 
   return (
      <Flex alignItems="center" flexDir="column">
-         <Text fontSize="2xl" mb="4">
-             Recommended shows
+         <Text
+                    fontSize="2xl"
+                    color="white"
+                    margin="auto"
+                    pb="2"
+                    fontWeight="medium"
+                >
+             The results are in:
          </Text>
          <UnorderedList>
              {shows.map(show => <ListItem key={show} fontSize="xl">{show}</ListItem>)}
