@@ -87,6 +87,7 @@ def predict(body, model):
     recommended_shows = [
         show[0] for show in sorted_shows[:top_n] if show[0] not in show_ids
     ]
+    recommended_shows = list(set(recommended_shows))
     recommended_shows = label_encoder.inverse_transform(recommended_shows).tolist()
 
     logger.info("Made prediction")
