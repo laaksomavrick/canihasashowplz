@@ -12,6 +12,7 @@ function ShowCard({ show }) {
             direction={{ base: "column", sm: "row" }}
             overflow="hidden"
             variant="outline"
+            boxShadow="sm"
         >
             <Image
                 objectFit="cover"

@@ -16,7 +16,7 @@ function RecommendationResultsPage() {
                     fontSize="2xl"
                     color="gray.700"
                     margin="auto"
-                    pb="4"
+                    pb="6"
                     fontWeight="medium"
                 >
              The results are in:
