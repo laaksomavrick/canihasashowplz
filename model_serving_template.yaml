@@ -293,6 +293,8 @@ Resources:
                   - "dynamodb:Get*"
                   - "dynamodb:Query"
                   - "dynamodb:Scan"
+                  - "dynamodb:Update*"
+                  - "dynamodb:PutItem"
                 Resource:
                   - Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-ShowTableArn
                   - !Sub
@@ -304,6 +306,15 @@ Resources:
                     - ${TableName}/*
                     - TableName:
                         Fn::ImportValue: !Sub canihaveatvshowplz-${Environment}-PredictionTableArn
+        - PolicyName: !Sub ${AWS::StackName}-PredictionGetterParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ssm:GetParameter*"
+                Resource:
+                  - '*'
 
 
   PredictionRequestQueue:

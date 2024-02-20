@@ -1,11 +1,12 @@
 import { usePredictionContext } from "../contexts/PredictionContext.jsx";
-import { Flex, ListItem, Text, UnorderedList } from "@chakra-ui/react";
+import { Flex, Grid, ListItem, Text, UnorderedList } from "@chakra-ui/react";
 import { Navigate } from "react-router-dom";
+import ShowCard from "../components/ShowCard.jsx";
 
 function RecommendationResultsPage() {
-    const { shows } = usePredictionContext();
+    const { shows, predictionId } = usePredictionContext();
 
-    if (shows == null || shows.length === 0) {
+    if (predictionId == null) {
         return <Navigate to='/'></Navigate>
     }
 
@@ -13,16 +14,28 @@ function RecommendationResultsPage() {
      <Flex alignItems="center" flexDir="column">
          <Text
                     fontSize="2xl"
-                    color="white"
+                    color="gray.700"
                     margin="auto"
-                    pb="2"
+                    pb="6"
                     fontWeight="medium"
                 >
              The results are in:
          </Text>
-         <UnorderedList>
-             {shows.map(show => <ListItem key={show} fontSize="xl">{show}</ListItem>)}
-         </UnorderedList>
+         {shows.length === 0 ? (
+            <Text
+                    fontSize="2xl"
+                    color="gray.700"
+                    margin="auto"
+                    py="6"
+                    fontWeight="medium"
+                >
+                Sorry! We can't make any recommendations given the provided shows you like. Try again later.
+         </Text>
+         ) : (
+             <Grid templateRows="1fr" templateColumns="1fr" gap={4}>
+                 {shows.map(show => <ShowCard key={show.title} show={show} />)}
+             </Grid>
+         )}
     </Flex>
   )
 }

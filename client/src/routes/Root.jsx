@@ -3,9 +3,9 @@ import { Box, Heading, Flex, Grid } from "@chakra-ui/react";
 
 export default function Root() {
   return (
-      <Box w="100vw" h="100vh" background="red.600">
+      <Box w="100vw" h="100vh" background="gray.50">
           <Grid
-              templateRows='minmax(100px, max-content) 1fr'
+              templateRows='minmax(100px, max-content) 1fr minmax(100px, max-content)'
               w="100%"
               maxW="3xl"
               h="100%"
@@ -17,9 +17,9 @@ export default function Root() {
                       py="6"
                       color="white"
                       style={{
-                          'text-shadow': '5px 5px 0 #000, -1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000'
+                          'text-shadow': '4px 4px 0 #2D3748, -1px 1px 0 #2D3748, -1px -1px 0 #2D3748, 1px -1px 0 #2D3748'
                       }}
-                  >canihasashowplz</Heading>
+                  >canihasashowplz?</Heading>
               </Flex>
               <Box px="6">
                   <Outlet />
