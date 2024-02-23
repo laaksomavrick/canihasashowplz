@@ -24,9 +24,6 @@ Parameters:
   ModelTrainingVersion:
     Type: String
     Default: latest
-  DomainName:
-    Type: String
-    Default: canihasashowplz.com
 
 Globals:
   Function:
@@ -131,12 +128,6 @@ Resources:
         DNSName: !GetAtt ClientDistribution.DomainName
         HostedZoneId: Z2FDTNDATAQYW2
         EvaluateTargetHealth: false
-
-#  SSLCertificate:
-#    Type: AWS::CertificateManager::Certificate
-#    Properties:
-#      DomainName: !If [IsProd, canihasashowplz.com, staging.canihasashowplz.com]
-#      ValidationMethod: DNS
 
   ApiGateway:
     Type: AWS::Serverless::Api
