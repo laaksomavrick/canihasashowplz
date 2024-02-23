@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
+     - 'client/**'
      - 'prediction_ack/**'
      - 'prediction_worker/**'
      - 'prediction_getter/**'
@@ -55,6 +56,23 @@ jobs:
             changed:
               - 'model_training/training_version'
               - 'model_training/data_version'
+
+  client-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
+    outputs:
+      changed: ${{ steps.filter.outputs.changed }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            changed:
+              - 'client/**'
 
   upload-model-inference-image:
     name: Upload model inference image to ECR
@@ -244,3 +262,38 @@ jobs:
         run: make build-model-serving-prod
       - name: Deploy model training
         run: make deploy-model-serving-prod-ci
+
+  upload-client:
+    name: Upload client to S3
+    needs: [deploy-model-serving, client-changes]
+    if: ${{ always() && needs.client-changes.outputs.changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Install node dependencies
+        run: npm ci
+        working-directory: client
+      - name: Build production artifact
+        run: npm run build
+        working-directory: client
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ vars.RUNNER_AWS_ROLE_ID }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Deploy client to S3
+        run: |
+          aws s3 sync dist ${{ vars.BUCKET_ID }}
+        working-directory: client
+      - name: Invalidate Cloudfront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ vars.CLOUDFRONT_ID }} --paths "/*";
+        working-directory: client

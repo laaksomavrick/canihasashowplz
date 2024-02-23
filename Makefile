@@ -7,6 +7,10 @@ MODEL_SERVING_TEMPLATE := model_serving_template.yaml
 MODEL_TRAINING_CONFIG := model_training_samconfig.toml
 MODEL_SERVING_CONFIG := model_serving_samconfig.toml
 
+.PHONY: upload-client-staging
+upload-client-staging:
+	@cd client && npm run build:staging && aws s3 sync dist s3://canihaveatvshowplz-serving-staging-clientbucket
+
 .PHONY: build-model-training-staging
 build-model-training-staging:
 	@$(MAKE) build-staging TEMPLATE_FILE=$(MODEL_TRAINING_TEMPLATE) CONFIG_FILE=$(MODEL_TRAINING_CONFIG)
