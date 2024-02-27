@@ -44,7 +44,7 @@ function MakeRecommendationPage() {
                     pb="4"
                     fontWeight="medium"
                 >
-                    To begin, submit three television shows you enjoy:</Text>
+                    Submit three television shows you enjoy:</Text>
                 <form onSubmit={onSubmit}>
                     <Stack spacing={3}>
                         <Input
