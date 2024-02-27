@@ -1,6 +1,7 @@
 import json
 import os
 import uuid
+from datetime import datetime
 
 import boto3 as boto3
 
@@ -12,9 +13,12 @@ SAGEMAKER_ENDPOINT_NAME = os.getenv("PREDICTION_ENDPOINT_NAME")
 def save_prediction(prediction_id, prediction):
     dynamodb = boto3.client("dynamodb")
 
+    timestamp = datetime.utcnow().isoformat()
+
     item = {
         "PredictionId": {"S": prediction_id},
         "Prediction": {"S": json.dumps(prediction)},
+        "Timestamp": {"S": timestamp},
     }
 
     response = dynamodb.put_item(TableName=PREDICTION_TABLE_NAME, Item=item)
@@ -46,8 +50,14 @@ def write_is_liked(show_ids):
     # TODO: support user_id as param from FE
     user_id = str(uuid.uuid4())
     is_liked = True
+    timestamp = datetime.utcnow().isoformat()
 
     for show_id in show_ids:
-        item = {"ShowId": str(show_id), "UserId": user_id, "IsLiked": is_liked}
+        item = {
+            "ShowId": str(show_id),
+            "UserId": user_id,
+            "IsLiked": is_liked,
+            "Timestamp": timestamp,
+        }
 
         table.put_item(Item=item)
