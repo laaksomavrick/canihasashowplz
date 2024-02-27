@@ -11,6 +11,7 @@ import ProcessingPage from "./pages/ProcessingPage.jsx";
 import RecommendationResultsPage from "./pages/RecommendationResultsPage.jsx";
 import MakeRecommendationPage from "./pages/MakeRecommendationPage.jsx";
 import { PredictionContextProvider } from "./contexts/PredictionContext.jsx";
+import AboutPage from "./pages/AboutPage";
 
 const router = createBrowserRouter([
     {
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
             {
                 path: "/results",
                 element: <RecommendationResultsPage />,
+            },
+            {
+                path: "/about",
+                element: <AboutPage />,
             },
         ]
     },

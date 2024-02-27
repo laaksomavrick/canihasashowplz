@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
-import { Box, Heading, Flex, Grid } from "@chakra-ui/react";
+import { Box, Heading, Flex, Grid, Link as ChakraLink } from "@chakra-ui/react";
+import { Link as ReactRouterLink } from 'react-router-dom'
 
 export default function Root() {
   return (
@@ -24,6 +25,11 @@ export default function Root() {
               <Box px="6">
                   <Outlet />
               </Box>
+              <Flex px="6" justifyContent="center">
+                  <ChakraLink as={ReactRouterLink} to='/about' fontSize="xl" color="blue.500">
+                      About
+                    </ChakraLink>
+              </Flex>
           </Grid>
       </Box>
   );
